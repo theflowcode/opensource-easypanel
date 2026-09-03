@@ -42,20 +42,20 @@ Build an open-source, production-ready, ultra-low resource footprint PaaS contro
 
 ---
 
-### Phase 1: Foundation Lock (Prerequisite for Parallelism) [NEXT]
+### Phase 1: Foundation Lock (Prerequisite for Parallelism) [COMPLETED]
 *Goal: Lock down all core domain models, interfaces, and mock harnesses so parallel tasks can proceed without interruption.*
-- [ ] Initialize Go module (`go.mod`) with zero-bloat dependencies
-- [ ] Implement pure domain entities in `internal/core/domain/` (`Project`, `Service`, `Domain`, `Deployment`, `User`)
-- [ ] Define immutable outbound port interfaces in `internal/core/port/`:
+- [x] Initialize Go module (`go.mod`) with zero-bloat dependencies
+- [x] Implement pure domain entities in `internal/core/domain/` (`Project`, `Service`, `Domain`, `Deployment`, `User`)
+- [x] Define immutable outbound port interfaces in `internal/core/port/`:
   - `DockerPort` (container/swarm lifecycle, volume, network)
   - `ProxyDriverPort` (dynamic reverse proxy routing)
   - `DatabasePort` (metadata persistence)
   - `StreamPort` (container log streaming & PTY terminal)
   - `TemplatePort` (1-click app/db templates)
   - `EventBusPort` (in-memory async event dispatcher)
-- [ ] Implement pure-Go embedded SQLite repository in `internal/adapter/db/sqlite/`
-- [ ] Implement thread-safe Mock harnesses in `internal/test/mock/` for every port
-- [ ] Validate Foundation Lock: All mocks and entity unit tests pass cleanly
+- [x] Implement pure-Go embedded SQLite repository in `internal/adapter/db/sqlite/`
+- [x] Implement thread-safe Mock harnesses in `internal/test/mock/` for every port
+- [x] Validate Foundation Lock: All mocks and entity unit tests pass cleanly (100% race-free, zero CGO)
 
 ---
 

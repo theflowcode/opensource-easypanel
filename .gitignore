@@ -1,22 +1,38 @@
-# Binaries and build artifacts
+# ==============================================================================
+# OpenSource Easypanel .gitignore (Public Repository Standard)
+# ==============================================================================
+
+# ------------------------------------------------------------------------------
+# 1. Compiled Binaries & Build Outputs
+# ------------------------------------------------------------------------------
 bin/
 dist/
 build/
+openpanel
+openpanel-*
 *.exe
 *.exe~
 *.dll
 *.so
 *.dylib
 
-# Test artifacts
+# ------------------------------------------------------------------------------
+# 2. Go Testing & Profiling Artifacts
+# ------------------------------------------------------------------------------
 *.out
 *.test
-coverage/
+*.prof
+coverage.txt
+coverage.out
+cpu.pprof
+mem.pprof
 
-# Go dependency cache
+# Go vendor directory (rely on clean go.mod and go.sum)
 vendor/
 
-# Node / Vite frontend artifacts
+# ------------------------------------------------------------------------------
+# 3. Frontend & Node Ecosystem
+# ------------------------------------------------------------------------------
 node_modules/
 frontend/dist/
 frontend/.vite/
@@ -25,9 +41,14 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
+.eslintcache
+.turbo/
 
-# Embedded Database & runtime data
+# ------------------------------------------------------------------------------
+# 4. Embedded SQLite, Backups & Local Runtime Data
+# ------------------------------------------------------------------------------
 data/
+storage/
 *.db
 *.db-journal
 *.db-wal
@@ -36,17 +57,70 @@ data/
 *.sqlite3
 *.sdb
 *.mdb
+*.sql.gz
+*.bak
 
-# Secrets and local configurations
+# ------------------------------------------------------------------------------
+# 5. Reverse Proxy & Dynamic Configuration (Traefik / TLS)
+# ------------------------------------------------------------------------------
+# Critical: Never commit dynamic ACME / Let's Encrypt certificates or local routes
+acme.json
+*/acme.json
+traefik/acme.json
+traefik/dynamic/*.yaml
+traefik/dynamic/*.yml
+!traefik/dynamic/.gitkeep
+
+# ------------------------------------------------------------------------------
+# 6. Secrets, Certificates, Keys & Environment Configurations
+# ------------------------------------------------------------------------------
+# Environment files
 .env
-.env.local
-.env.*.local
+.env.*
+!.env.example
 
-# Operating System & IDE files
+# Cryptographic Keys & Certificates
+*.pem
+*.key
+*.crt
+*.cert
+*.pfx
+*.p12
+*.csr
+
+# SSH and Cloud Credentials
+id_rsa
+id_rsa.pub
+id_ed25519
+id_ed25519.pub
+*.pubkey
+credentials.json
+service-account*.json
+*.htpasswd
+
+# ------------------------------------------------------------------------------
+# 7. Operating System & Local Editor Artifacts
+# ------------------------------------------------------------------------------
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
 Thumbs.db
-.vscode/
+
+# IDEs
 .idea/
+.vscode/
 *.swp
 *.swo
 *~
+*.bak
+*.patch
+*.diff
+
+# Temporary scratch & log directories
+scratch/
+*.log
+tmp/
+.tmp/

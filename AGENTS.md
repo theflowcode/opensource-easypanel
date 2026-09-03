@@ -63,3 +63,18 @@ opensource-easypanel/
 - **Architect** (`@architect`): Designs interface contracts, authors ADRs in `.agents/adrs/`, and preserves hexagonal boundaries.
 - **Builder** (`@builder`): Implements Go packages and frontend components strictly within isolated package boundaries.
 - **Tester** (`@tester`): Runs table-driven unit tests, race audits (`go test -race ./...`), mock validation, and memory benchmarks (<30MB).
+
+---
+
+## 5. Code Quality & Modular Architecture Rules
+
+1. **File Size & Granularity Limit**:
+   - Keep all files strictly single-purpose and **under 300 lines** (hard limit: **500 lines**).
+   - Proactively extract and split any file exceeding these limits into focused sub-files (e.g. `repo_projects.go`, `repo_services.go`).
+2. **Pluggable Adapters & Null Object (`NoOp`) Fallbacks**:
+   - Every outbound infrastructure adapter must provide a corresponding `NoOp` implementation (located in `internal/adapter/noop/`).
+   - This ensures any subsystem (reverse proxy, streaming, templates, Docker swarm) can be disabled, swapped, or run headless via configuration with zero cascading breaks.
+3. **Frontend Vertical Slicing**:
+   - Structure frontend components by vertical feature modules under `frontend/src/modules/<feature>/` (e.g. `projects/`, `services/`, `terminal/`, `settings/`), encapsulating their own API clients, state, and UI.
+4. **Proactive Refactoring**:
+   - Flag and refactor tight coupling, leaky abstractions, or cross-adapter dependencies immediately.
