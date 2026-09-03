@@ -165,6 +165,14 @@ ALTER TABLE services ADD COLUMN project_name TEXT NOT NULL DEFAULT '';
 ALTER TABLE services ADD COLUMN deploy_script TEXT NOT NULL DEFAULT '';
 `,
 	},
+	{
+		version: 5,
+		name:    "add_database_config_and_redirects",
+		sql: `
+ALTER TABLE services ADD COLUMN database_config TEXT NOT NULL DEFAULT '{}';
+ALTER TABLE services ADD COLUMN redirects TEXT NOT NULL DEFAULT '[]';
+`,
+	},
 }
 
 func runMigrations(ctx context.Context, q queryer) error {

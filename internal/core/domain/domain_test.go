@@ -503,3 +503,56 @@ func TestSessionValidationAndExpiration(t *testing.T) {
 		t.Error("session with past expiry should be expired")
 	}
 }
+
+func TestProductionUIParityAndDatabaseEngines(t *testing.T) {
+	// 1. Test IsDatabase helper
+	if !domain.ServiceTypePostgres.IsDatabase() || !domain.ServiceTypeRedis.IsDatabase() ||
+		!domain.ServiceTypeMySQL.IsDatabase() || !domain.ServiceTypeMariaDB.IsDatabase() ||
+		!domain.ServiceTypeMongoDB.IsDatabase() || !domain.ServiceTypeDatabase.IsDatabase() {
+		t.Error("expected IsDatabase to be true for database engines")
+	}
+	if domain.ServiceTypeApp.IsDatabase() || domain.ServiceTypeTemplate.IsDatabase() {
+		t.Error("expected IsDatabase to be false for app and template")
+	}
+
+	// 2. Test auto image defaulting for database engines
+	dbService := domain.Service{
+		ID:        "db-1",
+		ProjectID: "proj-1",
+		Name:      "chatwoot-db",
+		Type:      domain.ServiceTypePostgres,
+	}
+	if err := dbService.Validate(); err != nil {
+		t.Fatalf("Validate failed on postgres service: %v", err)
+	}
+	if dbService.Image != "postgres:16-alpine" {
+		t.Errorf("expected default postgres image, got %s", dbService.Image)
+	}
+
+	// 3. Test DatabaseConfig and Redirects in ToSpec
+	dbService.DatabaseConfig = &domain.DatabaseConfig{
+		DatabaseName: "chatwoot_production",
+		RootPassword: "supersecretpass",
+		ExposePort:   5432,
+		IsExposed:    true,
+		EnabledTools: []string{"pgweb", "dbgate"},
+		InternalURL:  "postgres://postgres:supersecretpass@chatwoot-db:5432/chatwoot_production",
+	}
+	dbService.Redirects = []domain.RedirectRule{
+		{
+			ID:        "red-1",
+			ServiceID: "db-1",
+			Source:    "www.example.com",
+			Target:    "https://example.com",
+			Permanent: true,
+			Enabled:   true,
+		},
+	}
+	spec := dbService.ToSpec()
+	if spec.DatabaseConfig == nil || spec.DatabaseConfig.ExposePort != 5432 || len(spec.DatabaseConfig.EnabledTools) != 2 {
+		t.Errorf("DatabaseConfig not properly preserved in spec: %+v", spec.DatabaseConfig)
+	}
+	if len(spec.Redirects) != 1 || !spec.Redirects[0].Permanent {
+		t.Errorf("Redirects not properly preserved in spec: %+v", spec.Redirects)
+	}
+}

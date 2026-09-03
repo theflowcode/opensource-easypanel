@@ -16,7 +16,7 @@ type rowScanner interface {
 const serviceColumns = `id, project_id, project_name, name, type, deploy_token, deploy_script,
 	source_type, source_config, image, command, args,
 	env_vars, ports, volumes, domains, replicas,
-	cpu_limit, memory_limit, restart_policy, health_check, cron_jobs, labels,
+	cpu_limit, memory_limit, restart_policy, health_check, cron_jobs, database_config, redirects, labels,
 	status, created_at, updated_at`
 
 func (r *Repository) CreateService(ctx context.Context, s *domain.Service) error {
@@ -43,6 +43,8 @@ func (r *Repository) CreateService(ctx context.Context, s *domain.Service) error
 	sourceCfgJSON, _ := json.Marshal(s.SourceConfig)
 	healthJSON, _ := json.Marshal(s.HealthCheck)
 	cronJobsJSON, _ := json.Marshal(s.CronJobs)
+	dbCfgJSON, _ := json.Marshal(s.DatabaseConfig)
+	redirectsJSON, _ := json.Marshal(s.Redirects)
 	labelsJSON, _ := json.Marshal(s.Labels)
 
 	replicas := s.Replicas
@@ -59,15 +61,16 @@ func (r *Repository) CreateService(ctx context.Context, s *domain.Service) error
 			id, project_id, project_name, name, type, deploy_token, deploy_script,
 			source_type, source_config, image, command, args,
 			env_vars, ports, volumes, domains, replicas,
-			cpu_limit, memory_limit, restart_policy, health_check, cron_jobs, labels,
+			cpu_limit, memory_limit, restart_policy, health_check, cron_jobs, database_config, redirects, labels,
 			status, created_at, updated_at
-		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 	`
 	_, err := r.q.ExecContext(ctx, query,
 		s.ID, s.ProjectID, s.ProjectName, s.Name, string(s.Type), s.DeployToken, s.DeployScript,
 		string(s.SourceType), string(sourceCfgJSON), s.Image, s.Command, string(argsJSON),
 		string(envVarsJSON), string(portsJSON), string(volumesJSON), string(domainsJSON), replicas,
-		s.Resources.CPULimit, s.Resources.MemoryLimit, restartPolicy, string(healthJSON), string(cronJobsJSON), string(labelsJSON),
+		s.Resources.CPULimit, s.Resources.MemoryLimit, restartPolicy, string(healthJSON), string(cronJobsJSON),
+		string(dbCfgJSON), string(redirectsJSON), string(labelsJSON),
 		string(s.Status), s.CreatedAt, s.UpdatedAt,
 	)
 	if err != nil {
@@ -174,6 +177,8 @@ func (r *Repository) UpdateService(ctx context.Context, s *domain.Service) error
 	sourceCfgJSON, _ := json.Marshal(s.SourceConfig)
 	healthJSON, _ := json.Marshal(s.HealthCheck)
 	cronJobsJSON, _ := json.Marshal(s.CronJobs)
+	dbCfgJSON, _ := json.Marshal(s.DatabaseConfig)
+	redirectsJSON, _ := json.Marshal(s.Redirects)
 	labelsJSON, _ := json.Marshal(s.Labels)
 
 	replicas := s.Replicas
@@ -190,7 +195,8 @@ func (r *Repository) UpdateService(ctx context.Context, s *domain.Service) error
 			project_name = ?, name = ?, type = ?, deploy_token = ?, deploy_script = ?,
 			source_type = ?, source_config = ?, image = ?, command = ?, args = ?,
 			env_vars = ?, ports = ?, volumes = ?, domains = ?, replicas = ?,
-			cpu_limit = ?, memory_limit = ?, restart_policy = ?, health_check = ?, cron_jobs = ?, labels = ?,
+			cpu_limit = ?, memory_limit = ?, restart_policy = ?, health_check = ?, cron_jobs = ?,
+			database_config = ?, redirects = ?, labels = ?,
 			status = ?, updated_at = ?
 		WHERE id = ?
 	`
@@ -198,7 +204,8 @@ func (r *Repository) UpdateService(ctx context.Context, s *domain.Service) error
 		s.ProjectName, s.Name, string(s.Type), s.DeployToken, s.DeployScript,
 		string(s.SourceType), string(sourceCfgJSON), s.Image, s.Command, string(argsJSON),
 		string(envVarsJSON), string(portsJSON), string(volumesJSON), string(domainsJSON), replicas,
-		s.Resources.CPULimit, s.Resources.MemoryLimit, restartPolicy, string(healthJSON), string(cronJobsJSON), string(labelsJSON),
+		s.Resources.CPULimit, s.Resources.MemoryLimit, restartPolicy, string(healthJSON), string(cronJobsJSON),
+		string(dbCfgJSON), string(redirectsJSON), string(labelsJSON),
 		string(s.Status), s.UpdatedAt, s.ID,
 	)
 	if err != nil {

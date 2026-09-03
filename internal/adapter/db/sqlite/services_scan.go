@@ -20,6 +20,8 @@ func (r *Repository) scanServiceRow(scanner rowScanner) (*domain.Service, error)
 		sourceCfgJSON string
 		healthJSON    string
 		cronJobsJSON  string
+		dbCfgJSON     string
+		redirectsJSON string
 		labelsJSON    string
 		status        string
 		argsJSON      string
@@ -33,7 +35,8 @@ func (r *Repository) scanServiceRow(scanner rowScanner) (*domain.Service, error)
 		&s.ID, &s.ProjectID, &s.ProjectName, &s.Name, &srvType, &s.DeployToken, &s.DeployScript,
 		&sourceType, &sourceCfgJSON, &s.Image, &s.Command, &argsJSON,
 		&envVarsJSON, &portsJSON, &volumesJSON, &domainsJSON, &s.Replicas,
-		&s.Resources.CPULimit, &s.Resources.MemoryLimit, &s.RestartPolicy, &healthJSON, &cronJobsJSON, &labelsJSON,
+		&s.Resources.CPULimit, &s.Resources.MemoryLimit, &s.RestartPolicy, &healthJSON, &cronJobsJSON,
+		&dbCfgJSON, &redirectsJSON, &labelsJSON,
 		&status, &s.CreatedAt, &s.UpdatedAt,
 	)
 	if errors.Is(err, sql.ErrNoRows) {
@@ -55,6 +58,8 @@ func (r *Repository) scanServiceRow(scanner rowScanner) (*domain.Service, error)
 	_ = json.Unmarshal([]byte(sourceCfgJSON), &s.SourceConfig)
 	_ = json.Unmarshal([]byte(healthJSON), &s.HealthCheck)
 	_ = json.Unmarshal([]byte(cronJobsJSON), &s.CronJobs)
+	_ = json.Unmarshal([]byte(dbCfgJSON), &s.DatabaseConfig)
+	_ = json.Unmarshal([]byte(redirectsJSON), &s.Redirects)
 	_ = json.Unmarshal([]byte(labelsJSON), &s.Labels)
 
 	return &s, nil

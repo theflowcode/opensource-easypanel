@@ -15,12 +15,17 @@ var (
 	ErrInternal      = errors.New("internal server error")
 )
 
-// ServiceType defines the architectural role of a service.
+// ServiceType defines the architectural role or database engine of a service.
 type ServiceType string
 
 const (
 	ServiceTypeApp      ServiceType = "app"
-	ServiceTypeDatabase ServiceType = "database"
+	ServiceTypeDatabase ServiceType = "database" // generic fallback
+	ServiceTypePostgres ServiceType = "postgres"
+	ServiceTypeRedis    ServiceType = "redis"
+	ServiceTypeMySQL    ServiceType = "mysql"
+	ServiceTypeMariaDB  ServiceType = "mariadb"
+	ServiceTypeMongoDB  ServiceType = "mongodb"
 	ServiceTypeTemplate ServiceType = "template"
 )
 
@@ -31,15 +36,19 @@ const (
 	SourceTypeImage      ServiceSourceType = "image"
 	SourceTypeGit        ServiceSourceType = "git"
 	SourceTypeDockerfile ServiceSourceType = "dockerfile"
+	SourceTypeGithub     ServiceSourceType = "github"
+	SourceTypeUpload     ServiceSourceType = "upload"
 )
 
 // SourceConfig provides build/git parameters when deploying from source.
 type SourceConfig struct {
-	RepoURL        string            `json:"repoUrl,omitempty"`
-	Branch         string            `json:"branch,omitempty"`
-	DockerfilePath string            `json:"dockerfilePath,omitempty"`
-	ContextPath    string            `json:"contextPath,omitempty"`
-	BuildArgs      map[string]string `json:"buildArgs,omitempty"`
+	RepoURL          string            `json:"repoUrl,omitempty"`
+	Branch           string            `json:"branch,omitempty"`
+	DockerfilePath   string            `json:"dockerfilePath,omitempty"`
+	ContextPath      string            `json:"contextPath,omitempty"`
+	BuildArgs        map[string]string `json:"buildArgs,omitempty"`
+	RegistryUser     string            `json:"registryUser,omitempty"`
+	RegistryPassword string            `json:"registryPassword,omitempty"`
 }
 
 // RestartPolicy constants for container lifecycle.
@@ -149,6 +158,8 @@ type ServiceSpec struct {
 	RestartPolicy  string             `json:"restartPolicy,omitempty"`
 	HealthCheck    *HealthCheckConfig `json:"healthCheck,omitempty"`
 	CronJobs       []CronJobSpec      `json:"cronJobs,omitempty"`
+	DatabaseConfig *DatabaseConfig    `json:"databaseConfig,omitempty"`
+	Redirects      []RedirectRule     `json:"redirects,omitempty"`
 	Labels         map[string]string  `json:"labels,omitempty"`
 }
 
@@ -194,17 +205,6 @@ type LogStreamOptions struct {
 	TailLines  int  `json:"tailLines"`
 	Follow     bool `json:"follow"`
 	Timestamps bool `json:"timestamps"`
-}
-
-// RouteConfig specifies reverse proxy routing for Traefik.
-type RouteConfig struct {
-	ServiceID    string   `json:"serviceId"`
-	Domain       string   `json:"domain"`
-	TargetPort   int      `json:"targetPort"`
-	PathPrefix   string   `json:"pathPrefix,omitempty"`
-	EnableHTTPS  bool     `json:"enableHttps"`
-	CertResolver string   `json:"certResolver,omitempty"` // "letsencrypt"
-	Middlewares  []string `json:"middlewares,omitempty"`
 }
 
 // TerminalSize communicates terminal window resize events.

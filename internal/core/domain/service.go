@@ -25,13 +25,15 @@ type Service struct {
 	Domains       []string           `json:"domains,omitempty"`
 	Replicas      int                `json:"replicas"`
 	Resources     ResourceLimits     `json:"resources"`
-	RestartPolicy string             `json:"restartPolicy,omitempty"`
-	HealthCheck   *HealthCheckConfig `json:"healthCheck,omitempty"`
-	CronJobs      []CronJobSpec      `json:"cronJobs,omitempty"`
-	Labels        map[string]string  `json:"labels,omitempty"`
-	Status        ServiceStatus      `json:"status"`
-	CreatedAt     time.Time          `json:"createdAt"`
-	UpdatedAt     time.Time          `json:"updatedAt"`
+	RestartPolicy  string             `json:"restartPolicy,omitempty"`
+	HealthCheck    *HealthCheckConfig `json:"healthCheck,omitempty"`
+	CronJobs       []CronJobSpec      `json:"cronJobs,omitempty"`
+	DatabaseConfig *DatabaseConfig    `json:"databaseConfig,omitempty"`
+	Redirects      []RedirectRule     `json:"redirects,omitempty"`
+	Labels         map[string]string  `json:"labels,omitempty"`
+	Status         ServiceStatus      `json:"status"`
+	CreatedAt      time.Time          `json:"createdAt"`
+	UpdatedAt      time.Time          `json:"updatedAt"`
 }
 
 // Validate checks that the service is well-formed.
@@ -48,13 +50,30 @@ func (s *Service) Validate() error {
 	if strings.TrimSpace(s.DeployToken) == "" {
 		s.DeployToken = NewID()
 	}
+	if s.Type == "" {
+		s.Type = ServiceTypeApp
+	}
+	if s.Type.IsDatabase() && strings.TrimSpace(s.Image) == "" {
+		switch s.Type {
+		case ServiceTypePostgres:
+			s.Image = "postgres:16-alpine"
+		case ServiceTypeRedis:
+			s.Image = "redis:7-alpine"
+		case ServiceTypeMySQL:
+			s.Image = "mysql:8.0"
+		case ServiceTypeMariaDB:
+			s.Image = "mariadb:11"
+		case ServiceTypeMongoDB:
+			s.Image = "mongo:7"
+		}
+	}
 	if s.SourceType == "" {
 		s.SourceType = SourceTypeImage
 	}
 	if s.SourceType == SourceTypeImage && strings.TrimSpace(s.Image) == "" {
 		return ErrValidation
 	}
-	if s.SourceType == SourceTypeGit {
+	if s.SourceType == SourceTypeGit || s.SourceType == SourceTypeGithub {
 		if s.SourceConfig == nil || strings.TrimSpace(s.SourceConfig.RepoURL) == "" {
 			return ErrValidation
 		}
@@ -110,6 +129,8 @@ func (s *Service) ToSpec() ServiceSpec {
 		RestartPolicy:  restartPolicy,
 		HealthCheck:    s.HealthCheck,
 		CronJobs:       s.CronJobs,
+		DatabaseConfig: s.DatabaseConfig,
+		Redirects:      s.Redirects,
 		Labels:         labels,
 	}
 }

@@ -389,6 +389,23 @@ func TestAdvancedServiceAndDomainFields(t *testing.T) {
 			{Key: "APP_ENV", Value: "production"},
 			{Key: "DB_PASS", Value: "secret123", IsSecret: true},
 		},
+		DatabaseConfig: &domain.DatabaseConfig{
+			DatabaseName: "adv_db",
+			RootPassword: "rootpassword",
+			ExposePort:   5432,
+			IsExposed:    true,
+			EnabledTools: []string{"pgweb", "dbgate"},
+		},
+		Redirects: []domain.RedirectRule{
+			{
+				ID:        "r-1",
+				ServiceID: "s-adv",
+				Source:    "old.example.com",
+				Target:    "https://new.example.com",
+				Permanent: true,
+				Enabled:   true,
+			},
+		},
 	}
 
 	if err := repo.CreateService(ctx, srv); err != nil {
@@ -405,6 +422,12 @@ func TestAdvancedServiceAndDomainFields(t *testing.T) {
 	if got.DeployScript != "npm run migrate" {
 		t.Errorf("DeployScript not preserved: expected npm run migrate, got %s", got.DeployScript)
 	}
+	if got.DatabaseConfig == nil || got.DatabaseConfig.ExposePort != 5432 || len(got.DatabaseConfig.EnabledTools) != 2 {
+		t.Errorf("DatabaseConfig not preserved: %+v", got.DatabaseConfig)
+	}
+	if len(got.Redirects) != 1 || got.Redirects[0].Source != "old.example.com" {
+		t.Errorf("Redirects not preserved: %+v", got.Redirects)
+	}
 	if got.SourceType != domain.SourceTypeGit || got.SourceConfig.Branch != "main" {
 		t.Errorf("SourceConfig not preserved: %+v", got.SourceConfig)
 	}
@@ -418,8 +441,10 @@ func TestAdvancedServiceAndDomainFields(t *testing.T) {
 		t.Errorf("Secret env var not preserved or masked properly: %+v", got.EnvVars)
 	}
 
-	// Test UpdateService for ProjectName and DeployScript
+	// Test UpdateService for ProjectName, DeployScript, DatabaseConfig, and Redirects
 	got.DeployScript = "npm run migrate && npm run seed"
+	got.DatabaseConfig.EnabledTools = append(got.DatabaseConfig.EnabledTools, "redis-commander")
+	got.Redirects[0].Target = "https://updated.example.com"
 	if err := repo.UpdateService(ctx, got); err != nil {
 		t.Fatalf("UpdateService failed: %v", err)
 	}
@@ -429,6 +454,12 @@ func TestAdvancedServiceAndDomainFields(t *testing.T) {
 	}
 	if gotUpdated.DeployScript != "npm run migrate && npm run seed" {
 		t.Errorf("Updated DeployScript not preserved: got %s", gotUpdated.DeployScript)
+	}
+	if gotUpdated.DatabaseConfig == nil || len(gotUpdated.DatabaseConfig.EnabledTools) != 3 {
+		t.Errorf("Updated DatabaseConfig not preserved: %+v", gotUpdated.DatabaseConfig)
+	}
+	if len(gotUpdated.Redirects) != 1 || gotUpdated.Redirects[0].Target != "https://updated.example.com" {
+		t.Errorf("Updated Redirects not preserved: %+v", gotUpdated.Redirects)
 	}
 
 	// Test Domain with Middlewares
