@@ -128,25 +128,28 @@ type CronJobSpec struct {
 
 // ServiceSpec is the deployment specification passed to DockerPort.
 type ServiceSpec struct {
-	ID            string             `json:"id"`
-	ProjectID     string             `json:"projectId"`
-	Name          string             `json:"name"`
-	Type          ServiceType        `json:"type"`
-	DeployToken   string             `json:"deployToken,omitempty"`
-	SourceType    ServiceSourceType  `json:"sourceType"`
-	SourceConfig  *SourceConfig      `json:"sourceConfig,omitempty"`
-	Image         string             `json:"image"`
-	Command       string             `json:"command,omitempty"`
-	Args          []string           `json:"args,omitempty"`
-	EnvVars       []EnvVar           `json:"envVars,omitempty"`
-	Ports         []PortMapping      `json:"ports,omitempty"`
-	Volumes       []VolumeMount      `json:"volumes,omitempty"`
-	Replicas      int                `json:"replicas"`
-	Resources     ResourceLimits     `json:"resources"`
-	RestartPolicy string             `json:"restartPolicy,omitempty"`
-	HealthCheck   *HealthCheckConfig `json:"healthCheck,omitempty"`
-	CronJobs      []CronJobSpec      `json:"cronJobs,omitempty"`
-	Labels        map[string]string  `json:"labels,omitempty"`
+	ID             string             `json:"id"`
+	ProjectID      string             `json:"projectId"`
+	ProjectName    string             `json:"projectName,omitempty"`
+	Name           string             `json:"name"`
+	Type           ServiceType        `json:"type"`
+	DeployToken    string             `json:"deployToken,omitempty"`
+	DeployScript   string             `json:"deployScript,omitempty"`
+	SourceType     ServiceSourceType  `json:"sourceType"`
+	SourceConfig   *SourceConfig      `json:"sourceConfig,omitempty"`
+	Image          string             `json:"image"`
+	Command        string             `json:"command,omitempty"`
+	Args           []string           `json:"args,omitempty"`
+	EnvVars        []EnvVar           `json:"envVars,omitempty"`
+	Ports          []PortMapping      `json:"ports,omitempty"`
+	Volumes        []VolumeMount      `json:"volumes,omitempty"`
+	NetworkAliases []string           `json:"networkAliases,omitempty"`
+	Replicas       int                `json:"replicas"`
+	Resources      ResourceLimits     `json:"resources"`
+	RestartPolicy  string             `json:"restartPolicy,omitempty"`
+	HealthCheck    *HealthCheckConfig `json:"healthCheck,omitempty"`
+	CronJobs       []CronJobSpec      `json:"cronJobs,omitempty"`
+	Labels         map[string]string  `json:"labels,omitempty"`
 }
 
 // DeployResult returns the outcome of deploying a service.
@@ -175,13 +178,15 @@ type RegistryAuth struct {
 
 // ServiceStats snapshot of real-time container resource telemetry.
 type ServiceStats struct {
-	ServiceID        string    `json:"serviceId"`
-	CPUPercentage    float64   `json:"cpuPercentage"`
-	MemoryUsageBytes uint64    `json:"memoryUsageBytes"`
-	MemoryLimitBytes uint64    `json:"memoryLimitBytes"`
-	NetworkRxBytes   uint64    `json:"networkRxBytes"`
-	NetworkTxBytes   uint64    `json:"networkTxBytes"`
-	ReadAt           time.Time `json:"readAt"`
+	ServiceID          string    `json:"serviceId"`
+	CPUPercentage      float64   `json:"cpuPercentage"`
+	MemoryUsageBytes   uint64    `json:"memoryUsageBytes"`
+	MemoryLimitBytes   uint64    `json:"memoryLimitBytes"`
+	NetworkRxBytes     uint64    `json:"networkRxBytes"`
+	NetworkTxBytes     uint64    `json:"networkTxBytes"`
+	NetworkInputBytes  uint64    `json:"networkInputBytes"`
+	NetworkOutputBytes uint64    `json:"networkOutputBytes"`
+	ReadAt             time.Time `json:"readAt"`
 }
 
 // LogStreamOptions configures log streaming parameters.
@@ -245,44 +250,4 @@ type EventHandler func(event Event)
 // Subscription allows unsubscribing from event bus.
 type Subscription interface {
 	Unsubscribe()
-}
-
-// Template represents a 1-click app or database schema template.
-type Template struct {
-	ID          string                `json:"id"`
-	Name        string                `json:"name"`
-	Description string                `json:"description"`
-	Category    string                `json:"category"`
-	Icon        string                `json:"icon"`
-	Variables   []TemplateVariable    `json:"variables"`
-	Services    []TemplateServiceSpec `json:"services"`
-}
-
-// TemplateSummary is a lightweight template description for catalog display.
-type TemplateSummary struct {
-	ID          string `json:"id"`
-	Name        string `json:"name"`
-	Description string `json:"description"`
-	Category    string `json:"category"`
-	Icon        string `json:"icon"`
-}
-
-// TemplateVariable defines configurable inputs for 1-click templates.
-type TemplateVariable struct {
-	Key          string `json:"key"`
-	Label        string `json:"label"`
-	Description  string `json:"description"`
-	DefaultValue string `json:"defaultValue"`
-	Required     bool   `json:"required"`
-	IsSecret     bool   `json:"isSecret"`
-}
-
-// TemplateServiceSpec represents a service within a template.
-type TemplateServiceSpec struct {
-	Name      string         `json:"name"`
-	Image     string         `json:"image"`
-	Ports     []PortMapping  `json:"ports,omitempty"`
-	Volumes   []VolumeMount  `json:"volumes,omitempty"`
-	EnvVars   []EnvVar       `json:"envVars,omitempty"`
-	Resources ResourceLimits `json:"resources"`
 }

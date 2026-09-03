@@ -13,6 +13,12 @@ type rowScanner interface {
 	Scan(dest ...interface{}) error
 }
 
+const serviceColumns = `id, project_id, project_name, name, type, deploy_token, deploy_script,
+	source_type, source_config, image, command, args,
+	env_vars, ports, volumes, domains, replicas,
+	cpu_limit, memory_limit, restart_policy, health_check, cron_jobs, labels,
+	status, created_at, updated_at`
+
 func (r *Repository) CreateService(ctx context.Context, s *domain.Service) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -50,14 +56,16 @@ func (r *Repository) CreateService(ctx context.Context, s *domain.Service) error
 
 	query := `
 		INSERT INTO services (
-			id, project_id, name, type, deploy_token, source_type, source_config, image, command, args,
+			id, project_id, project_name, name, type, deploy_token, deploy_script,
+			source_type, source_config, image, command, args,
 			env_vars, ports, volumes, domains, replicas,
 			cpu_limit, memory_limit, restart_policy, health_check, cron_jobs, labels,
 			status, created_at, updated_at
-		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 	`
 	_, err := r.q.ExecContext(ctx, query,
-		s.ID, s.ProjectID, s.Name, string(s.Type), s.DeployToken, string(s.SourceType), string(sourceCfgJSON), s.Image, s.Command, string(argsJSON),
+		s.ID, s.ProjectID, s.ProjectName, s.Name, string(s.Type), s.DeployToken, s.DeployScript,
+		string(s.SourceType), string(sourceCfgJSON), s.Image, s.Command, string(argsJSON),
 		string(envVarsJSON), string(portsJSON), string(volumesJSON), string(domainsJSON), replicas,
 		s.Resources.CPULimit, s.Resources.MemoryLimit, restartPolicy, string(healthJSON), string(cronJobsJSON), string(labelsJSON),
 		string(s.Status), s.CreatedAt, s.UpdatedAt,
@@ -78,13 +86,7 @@ func (r *Repository) GetService(ctx context.Context, id string) (*domain.Service
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
-	query := `
-		SELECT id, project_id, name, type, deploy_token, source_type, source_config, image, command, args,
-		       env_vars, ports, volumes, domains, replicas,
-		       cpu_limit, memory_limit, restart_policy, health_check, cron_jobs, labels,
-		       status, created_at, updated_at
-		FROM services WHERE id = ?
-	`
+	query := `SELECT ` + serviceColumns + ` FROM services WHERE id = ?`
 	row := r.q.QueryRowContext(ctx, query, id)
 	return r.scanService(row)
 }
@@ -93,13 +95,7 @@ func (r *Repository) GetServiceByName(ctx context.Context, projectID, name strin
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
-	query := `
-		SELECT id, project_id, name, type, deploy_token, source_type, source_config, image, command, args,
-		       env_vars, ports, volumes, domains, replicas,
-		       cpu_limit, memory_limit, restart_policy, health_check, cron_jobs, labels,
-		       status, created_at, updated_at
-		FROM services WHERE project_id = ? AND name = ?
-	`
+	query := `SELECT ` + serviceColumns + ` FROM services WHERE project_id = ? AND name = ?`
 	row := r.q.QueryRowContext(ctx, query, projectID, name)
 	return r.scanService(row)
 }
@@ -112,13 +108,7 @@ func (r *Repository) GetServiceByDeployToken(ctx context.Context, token string) 
 		return nil, domain.ErrNotFound
 	}
 
-	query := `
-		SELECT id, project_id, name, type, deploy_token, source_type, source_config, image, command, args,
-		       env_vars, ports, volumes, domains, replicas,
-		       cpu_limit, memory_limit, restart_policy, health_check, cron_jobs, labels,
-		       status, created_at, updated_at
-		FROM services WHERE deploy_token = ?
-	`
+	query := `SELECT ` + serviceColumns + ` FROM services WHERE deploy_token = ?`
 	row := r.q.QueryRowContext(ctx, query, token)
 	return r.scanService(row)
 }
@@ -127,13 +117,7 @@ func (r *Repository) ListServicesByProject(ctx context.Context, projectID string
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
-	query := `
-		SELECT id, project_id, name, type, deploy_token, source_type, source_config, image, command, args,
-		       env_vars, ports, volumes, domains, replicas,
-		       cpu_limit, memory_limit, restart_policy, health_check, cron_jobs, labels,
-		       status, created_at, updated_at
-		FROM services WHERE project_id = ? ORDER BY created_at ASC
-	`
+	query := `SELECT ` + serviceColumns + ` FROM services WHERE project_id = ? ORDER BY created_at ASC`
 	rows, err := r.q.QueryContext(ctx, query, projectID)
 	if err != nil {
 		return nil, err
@@ -155,13 +139,7 @@ func (r *Repository) ListAllServices(ctx context.Context) ([]*domain.Service, er
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
-	query := `
-		SELECT id, project_id, name, type, deploy_token, source_type, source_config, image, command, args,
-		       env_vars, ports, volumes, domains, replicas,
-		       cpu_limit, memory_limit, restart_policy, health_check, cron_jobs, labels,
-		       status, created_at, updated_at
-		FROM services ORDER BY created_at ASC
-	`
+	query := `SELECT ` + serviceColumns + ` FROM services ORDER BY created_at ASC`
 	rows, err := r.q.QueryContext(ctx, query)
 	if err != nil {
 		return nil, err
@@ -209,14 +187,16 @@ func (r *Repository) UpdateService(ctx context.Context, s *domain.Service) error
 
 	query := `
 		UPDATE services SET
-			name = ?, type = ?, deploy_token = ?, source_type = ?, source_config = ?, image = ?, command = ?, args = ?,
+			project_name = ?, name = ?, type = ?, deploy_token = ?, deploy_script = ?,
+			source_type = ?, source_config = ?, image = ?, command = ?, args = ?,
 			env_vars = ?, ports = ?, volumes = ?, domains = ?, replicas = ?,
 			cpu_limit = ?, memory_limit = ?, restart_policy = ?, health_check = ?, cron_jobs = ?, labels = ?,
 			status = ?, updated_at = ?
 		WHERE id = ?
 	`
 	res, err := r.q.ExecContext(ctx, query,
-		s.Name, string(s.Type), s.DeployToken, string(s.SourceType), string(sourceCfgJSON), s.Image, s.Command, string(argsJSON),
+		s.ProjectName, s.Name, string(s.Type), s.DeployToken, s.DeployScript,
+		string(s.SourceType), string(sourceCfgJSON), s.Image, s.Command, string(argsJSON),
 		string(envVarsJSON), string(portsJSON), string(volumesJSON), string(domainsJSON), replicas,
 		s.Resources.CPULimit, s.Resources.MemoryLimit, restartPolicy, string(healthJSON), string(cronJobsJSON), string(labelsJSON),
 		string(s.Status), s.UpdatedAt, s.ID,

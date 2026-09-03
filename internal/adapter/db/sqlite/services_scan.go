@@ -30,7 +30,8 @@ func (r *Repository) scanServiceRow(scanner rowScanner) (*domain.Service, error)
 	)
 
 	err := scanner.Scan(
-		&s.ID, &s.ProjectID, &s.Name, &srvType, &s.DeployToken, &sourceType, &sourceCfgJSON, &s.Image, &s.Command, &argsJSON,
+		&s.ID, &s.ProjectID, &s.ProjectName, &s.Name, &srvType, &s.DeployToken, &s.DeployScript,
+		&sourceType, &sourceCfgJSON, &s.Image, &s.Command, &argsJSON,
 		&envVarsJSON, &portsJSON, &volumesJSON, &domainsJSON, &s.Replicas,
 		&s.Resources.CPULimit, &s.Resources.MemoryLimit, &s.RestartPolicy, &healthJSON, &cronJobsJSON, &labelsJSON,
 		&status, &s.CreatedAt, &s.UpdatedAt,

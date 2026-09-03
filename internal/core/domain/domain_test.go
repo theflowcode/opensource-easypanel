@@ -134,12 +134,14 @@ func TestServiceValidationAndToSpec(t *testing.T) {
 
 	// Test ToSpec
 	validService := domain.Service{
-		ID:        "srv-1",
-		ProjectID: "proj-1",
-		Name:      "web",
-		Type:      domain.ServiceTypeApp,
-		Image:     "nginx:alpine",
-		Replicas:  0, // should default to 1 in ToSpec
+		ID:           "srv-1",
+		ProjectID:    "proj-1",
+		ProjectName:  "myfirstproject",
+		Name:         "web",
+		Type:         domain.ServiceTypeApp,
+		Image:        "nginx:alpine",
+		DeployScript: "bundle exec rails db:migrate",
+		Replicas:     0, // should default to 1 in ToSpec
 		Ports: []domain.PortMapping{
 			{HostPort: 8080, ContainerPort: 80, Protocol: "tcp"},
 		},
@@ -148,7 +150,16 @@ func TestServiceValidationAndToSpec(t *testing.T) {
 	if spec.ID != "srv-1" || spec.Replicas != 1 {
 		t.Errorf("ToSpec() unexpected spec = %+v", spec)
 	}
-	if spec.Labels["easypanel.project"] != "proj-1" {
+	if spec.ProjectName != "myfirstproject" {
+		t.Errorf("ToSpec() expected ProjectName myfirstproject, got %s", spec.ProjectName)
+	}
+	if spec.DeployScript != "bundle exec rails db:migrate" {
+		t.Errorf("ToSpec() expected DeployScript, got %s", spec.DeployScript)
+	}
+	if len(spec.NetworkAliases) != 1 || spec.NetworkAliases[0] != "web" {
+		t.Errorf("ToSpec() expected NetworkAliases ['web'], got %v", spec.NetworkAliases)
+	}
+	if spec.Labels["easypanel.project"] != "proj-1" || spec.Labels["easypanel.projectName"] != "myfirstproject" {
 		t.Errorf("ToSpec() missing or wrong label: %v", spec.Labels)
 	}
 }

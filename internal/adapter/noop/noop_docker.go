@@ -81,11 +81,15 @@ func (n *NoOpDocker) GetServiceStatus(ctx context.Context, serviceID string) (*d
 
 func (n *NoOpDocker) GetServiceStats(ctx context.Context, serviceID string) (*domain.ServiceStats, error) {
 	return &domain.ServiceStats{
-		ServiceID:        serviceID,
-		CPUPercentage:    0.0,
-		MemoryUsageBytes: 0,
-		MemoryLimitBytes: 0,
-		ReadAt:           time.Now().UTC(),
+		ServiceID:          serviceID,
+		CPUPercentage:      0.0,
+		MemoryUsageBytes:   0,
+		MemoryLimitBytes:   0,
+		NetworkRxBytes:     0,
+		NetworkTxBytes:     0,
+		NetworkInputBytes:  0,
+		NetworkOutputBytes: 0,
+		ReadAt:             time.Now().UTC(),
 	}, nil
 }
 

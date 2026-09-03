@@ -71,6 +71,9 @@ func TestMockDockerPort(t *testing.T) {
 	if err != nil || stats == nil {
 		t.Errorf("GetServiceStats failed: %v", err)
 	}
+	if stats.NetworkInputBytes == 0 || stats.NetworkOutputBytes == 0 {
+		t.Errorf("GetServiceStats missing network I/O telemetry: %+v", stats)
+	}
 
 	// Delete
 	if err := m.DeleteService(ctx, "srv-1"); err != nil {

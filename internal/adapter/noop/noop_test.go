@@ -52,6 +52,9 @@ func TestNoOpAdapters(t *testing.T) {
 	if err != nil || stats == nil {
 		t.Errorf("NoOpDocker.GetServiceStats failed: %v", err)
 	}
+	if stats.NetworkInputBytes != 0 || stats.NetworkOutputBytes != 0 {
+		t.Errorf("NoOpDocker.GetServiceStats unexpected network I/O: %+v", stats)
+	}
 	info, err := d.GetDockerInfo(ctx)
 	if err != nil || info == nil || info.ServerVersion == "" {
 		t.Errorf("NoOpDocker.GetDockerInfo failed: %v", err)

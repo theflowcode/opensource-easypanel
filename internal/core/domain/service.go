@@ -9,9 +9,11 @@ import (
 type Service struct {
 	ID            string             `json:"id"`
 	ProjectID     string             `json:"projectId"`
+	ProjectName   string             `json:"projectName,omitempty"`
 	Name          string             `json:"name"`
 	Type          ServiceType        `json:"type"`
 	DeployToken   string             `json:"deployToken,omitempty"`
+	DeployScript  string             `json:"deployScript,omitempty"`
 	SourceType    ServiceSourceType  `json:"sourceType"`
 	SourceConfig  *SourceConfig      `json:"sourceConfig,omitempty"`
 	Image         string             `json:"image"`
@@ -75,6 +77,9 @@ func (s *Service) ToSpec() ServiceSpec {
 		labels[k] = v
 	}
 	labels["easypanel.project"] = s.ProjectID
+	if s.ProjectName != "" {
+		labels["easypanel.projectName"] = s.ProjectName
+	}
 	labels["easypanel.service"] = s.ID
 	labels["easypanel.name"] = s.Name
 
@@ -84,25 +89,28 @@ func (s *Service) ToSpec() ServiceSpec {
 	}
 
 	return ServiceSpec{
-		ID:            s.ID,
-		ProjectID:     s.ProjectID,
-		Name:          s.Name,
-		Type:          s.Type,
-		DeployToken:   s.DeployToken,
-		SourceType:    s.SourceType,
-		SourceConfig:  s.SourceConfig,
-		Image:         s.Image,
-		Command:       s.Command,
-		Args:          s.Args,
-		EnvVars:       s.EnvVars,
-		Ports:         s.Ports,
-		Volumes:       s.Volumes,
-		Replicas:      replicas,
-		Resources:     s.Resources,
-		RestartPolicy: restartPolicy,
-		HealthCheck:   s.HealthCheck,
-		CronJobs:      s.CronJobs,
-		Labels:        labels,
+		ID:             s.ID,
+		ProjectID:      s.ProjectID,
+		ProjectName:    s.ProjectName,
+		Name:           s.Name,
+		Type:           s.Type,
+		DeployToken:    s.DeployToken,
+		DeployScript:   s.DeployScript,
+		SourceType:     s.SourceType,
+		SourceConfig:   s.SourceConfig,
+		Image:          s.Image,
+		Command:        s.Command,
+		Args:           s.Args,
+		EnvVars:        s.EnvVars,
+		Ports:          s.Ports,
+		Volumes:        s.Volumes,
+		NetworkAliases: []string{s.Name},
+		Replicas:       replicas,
+		Resources:      s.Resources,
+		RestartPolicy:  restartPolicy,
+		HealthCheck:    s.HealthCheck,
+		CronJobs:       s.CronJobs,
+		Labels:         labels,
 	}
 }
 

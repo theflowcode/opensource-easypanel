@@ -364,11 +364,13 @@ func TestAdvancedServiceAndDomainFields(t *testing.T) {
 	}
 
 	srv := &domain.Service{
-		ID:         "s-adv",
-		ProjectID:  "p-adv",
-		Name:       "adv-web",
-		Type:       domain.ServiceTypeApp,
-		SourceType: domain.SourceTypeGit,
+		ID:           "s-adv",
+		ProjectID:    "p-adv",
+		ProjectName:  "adv-project",
+		Name:         "adv-web",
+		Type:         domain.ServiceTypeApp,
+		DeployScript: "npm run migrate",
+		SourceType:   domain.SourceTypeGit,
 		SourceConfig: &domain.SourceConfig{
 			RepoURL: "https://github.com/example/repo.git",
 			Branch:  "main",
@@ -397,6 +399,12 @@ func TestAdvancedServiceAndDomainFields(t *testing.T) {
 	if err != nil {
 		t.Fatalf("GetService failed: %v", err)
 	}
+	if got.ProjectName != "adv-project" {
+		t.Errorf("ProjectName not preserved: expected adv-project, got %s", got.ProjectName)
+	}
+	if got.DeployScript != "npm run migrate" {
+		t.Errorf("DeployScript not preserved: expected npm run migrate, got %s", got.DeployScript)
+	}
 	if got.SourceType != domain.SourceTypeGit || got.SourceConfig.Branch != "main" {
 		t.Errorf("SourceConfig not preserved: %+v", got.SourceConfig)
 	}
@@ -408,6 +416,19 @@ func TestAdvancedServiceAndDomainFields(t *testing.T) {
 	}
 	if len(got.EnvVars) != 2 || !got.EnvVars[1].IsSecret || got.EnvVars[1].MaskedValue() != "••••••••" {
 		t.Errorf("Secret env var not preserved or masked properly: %+v", got.EnvVars)
+	}
+
+	// Test UpdateService for ProjectName and DeployScript
+	got.DeployScript = "npm run migrate && npm run seed"
+	if err := repo.UpdateService(ctx, got); err != nil {
+		t.Fatalf("UpdateService failed: %v", err)
+	}
+	gotUpdated, err := repo.GetService(ctx, "s-adv")
+	if err != nil {
+		t.Fatalf("GetService after update failed: %v", err)
+	}
+	if gotUpdated.DeployScript != "npm run migrate && npm run seed" {
+		t.Errorf("Updated DeployScript not preserved: got %s", gotUpdated.DeployScript)
 	}
 
 	// Test Domain with Middlewares

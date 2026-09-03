@@ -157,6 +157,14 @@ CREATE INDEX IF NOT EXISTS idx_sessions_user_id ON sessions(user_id);
 CREATE UNIQUE INDEX IF NOT EXISTS idx_sessions_token_hash ON sessions(token_hash);
 `,
 	},
+	{
+		version: 4,
+		name:    "add_service_project_name_and_deploy_script",
+		sql: `
+ALTER TABLE services ADD COLUMN project_name TEXT NOT NULL DEFAULT '';
+ALTER TABLE services ADD COLUMN deploy_script TEXT NOT NULL DEFAULT '';
+`,
+	},
 }
 
 func runMigrations(ctx context.Context, q queryer) error {
