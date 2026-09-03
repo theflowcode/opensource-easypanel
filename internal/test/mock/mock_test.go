@@ -302,3 +302,65 @@ func TestMockResetMethods(t *testing.T) {
 		t.Error("MockEventBusPort.Reset() failed to clear state")
 	}
 }
+
+func TestMockActionsAndStorageProviders(t *testing.T) {
+	db := mock.NewMockDatabasePort()
+	ctx := context.Background()
+
+	// 1. Actions
+	act := &domain.Action{
+		ID:          "act-m1",
+		ProjectName: "p-mock",
+		ServiceName: "s-mock",
+		Type:        domain.ActionTypeDeployment,
+		Status:      domain.ActionStatusPending,
+		Description: "Mock deployment",
+	}
+	if err := db.CreateAction(ctx, act); err != nil {
+		t.Fatalf("CreateAction failed: %v", err)
+	}
+	gotAct, err := db.GetAction(ctx, "act-m1")
+	if err != nil || gotAct.Description != "Mock deployment" {
+		t.Fatalf("GetAction failed: %+v, err=%v", gotAct, err)
+	}
+
+	gotAct.Status = domain.ActionStatusDone
+	if err := db.UpdateAction(ctx, gotAct); err != nil {
+		t.Fatalf("UpdateAction failed: %v", err)
+	}
+
+	actions, err := db.ListActions(ctx, "p-mock", "s-mock", 10, 0)
+	if err != nil || len(actions) != 1 || actions[0].Status != domain.ActionStatusDone {
+		t.Fatalf("ListActions failed: len=%d, err=%v", len(actions), err)
+	}
+
+	// 2. Storage Providers
+	sp := &domain.StorageProvider{
+		ID:   "sp-m1",
+		Name: "Mock Disk",
+		Type: domain.StorageProviderTypeLocal,
+		Path: "/mock/backups",
+	}
+	if err := db.CreateStorageProvider(ctx, sp); err != nil {
+		t.Fatalf("CreateStorageProvider failed: %v", err)
+	}
+	gotSP, err := db.GetStorageProvider(ctx, "sp-m1")
+	if err != nil || gotSP.Name != "Mock Disk" {
+		t.Fatalf("GetStorageProvider failed: %+v, err=%v", gotSP, err)
+	}
+	list, err := db.ListStorageProviders(ctx)
+	if err != nil || len(list) != 1 {
+		t.Fatalf("ListStorageProviders failed: len=%d, err=%v", len(list), err)
+	}
+	if err := db.DeleteStorageProvider(ctx, "sp-m1"); err != nil {
+		t.Fatalf("DeleteStorageProvider failed: %v", err)
+	}
+	if _, err := db.GetStorageProvider(ctx, "sp-m1"); err != domain.ErrNotFound {
+		t.Errorf("expected ErrNotFound for deleted storage provider, got %v", err)
+	}
+
+	db.Reset()
+	if len(db.Actions) != 0 || len(db.StorageProviders) != 0 {
+		t.Error("Reset() did not clear Actions or StorageProviders")
+	}
+}

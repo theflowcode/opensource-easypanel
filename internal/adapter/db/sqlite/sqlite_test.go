@@ -516,3 +516,130 @@ func TestDeploymentsPagination(t *testing.T) {
 		t.Errorf("pagination overlap detected")
 	}
 }
+
+func TestActionsAndStorageProvidersCRUD(t *testing.T) {
+	repo := setupTestDB(t)
+	ctx := context.Background()
+
+	// 1. Actions CRUD
+	act := &domain.Action{
+		ID:          "act-101",
+		ProjectName: "myfirstproject",
+		ServiceName: "chatwoot",
+		Type:        domain.ActionTypeDeployment,
+		Status:      domain.ActionStatusRunning,
+		Description: "Deploy chatwoot v4.13.0",
+		NoKill:      true,
+		NoLogs:      false,
+		UserID:      "usr-1",
+		IsAPIAction: true,
+		Meta: map[string]interface{}{
+			"commit": "abc1234",
+		},
+	}
+	if err := repo.CreateAction(ctx, act); err != nil {
+		t.Fatalf("CreateAction failed: %v", err)
+	}
+
+	gotAct, err := repo.GetAction(ctx, "act-101")
+	if err != nil {
+		t.Fatalf("GetAction failed: %v", err)
+	}
+	if gotAct.Description != "Deploy chatwoot v4.13.0" || !gotAct.NoKill || !gotAct.IsAPIAction {
+		t.Errorf("Action fields not preserved: %+v", gotAct)
+	}
+	if gotAct.Meta["commit"] != "abc1234" {
+		t.Errorf("Action meta not preserved: %+v", gotAct.Meta)
+	}
+
+	// Update action
+	gotAct.Status = domain.ActionStatusDone
+	gotAct.Description = "Deploy finished successfully"
+	if err := repo.UpdateAction(ctx, gotAct); err != nil {
+		t.Fatalf("UpdateAction failed: %v", err)
+	}
+	gotUpdatedAct, err := repo.GetAction(ctx, "act-101")
+	if err != nil || gotUpdatedAct.Status != domain.ActionStatusDone {
+		t.Fatalf("UpdateAction not verified: %+v, err: %v", gotUpdatedAct, err)
+	}
+
+	// List actions
+	actions, err := repo.ListActions(ctx, "myfirstproject", "chatwoot", 10, 0)
+	if err != nil || len(actions) != 1 {
+		t.Fatalf("ListActions failed: len=%d, err=%v", len(actions), err)
+	}
+
+	// 2. StorageProviders CRUD
+	spLocal := &domain.StorageProvider{
+		ID:   "sp-loc",
+		Name: "Local Disk",
+		Type: domain.StorageProviderTypeLocal,
+		Path: "/etc/easypanel/backups",
+	}
+	if err := repo.CreateStorageProvider(ctx, spLocal); err != nil {
+		t.Fatalf("CreateStorageProvider failed: %v", err)
+	}
+
+	spS3 := &domain.StorageProvider{
+		ID:        "sp-s3",
+		Name:      "AWS S3 Offsite",
+		Type:      domain.StorageProviderTypeS3,
+		Endpoint:  "https://s3.amazonaws.com",
+		Bucket:    "company-backups",
+		Region:    "us-east-1",
+		AccessKey: "AKIAIOSFODNN7EXAMPLE",
+		SecretKey: "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY",
+	}
+	if err := repo.CreateStorageProvider(ctx, spS3); err != nil {
+		t.Fatalf("CreateStorageProvider S3 failed: %v", err)
+	}
+
+	gotSP, err := repo.GetStorageProvider(ctx, "sp-s3")
+	if err != nil || gotSP.Bucket != "company-backups" {
+		t.Fatalf("GetStorageProvider failed: %+v, err=%v", gotSP, err)
+	}
+
+	sps, err := repo.ListStorageProviders(ctx)
+	if err != nil || len(sps) != 2 {
+		t.Fatalf("ListStorageProviders failed: len=%d, err=%v", len(sps), err)
+	}
+
+	if err := repo.DeleteStorageProvider(ctx, "sp-loc"); err != nil {
+		t.Fatalf("DeleteStorageProvider failed: %v", err)
+	}
+	if _, err := repo.GetStorageProvider(ctx, "sp-loc"); err != domain.ErrNotFound {
+		t.Errorf("expected ErrNotFound for deleted storage provider, got %v", err)
+	}
+
+	// 3. Service PrimaryDomainID and ZeroDowntime
+	p := &domain.Project{ID: "p-zd", Name: "ZD Project"}
+	_ = repo.CreateProject(ctx, p)
+	s := &domain.Service{
+		ID:              "s-zd",
+		ProjectID:       "p-zd",
+		Name:            "zd-app",
+		Image:           "nginx:alpine",
+		PrimaryDomainID: "dom-primary-1",
+		ZeroDowntime:    true,
+	}
+	if err := repo.CreateService(ctx, s); err != nil {
+		t.Fatalf("CreateService failed: %v", err)
+	}
+	gotS, err := repo.GetService(ctx, "s-zd")
+	if err != nil {
+		t.Fatalf("GetService failed: %v", err)
+	}
+	if gotS.PrimaryDomainID != "dom-primary-1" || !gotS.ZeroDowntime {
+		t.Errorf("PrimaryDomainID or ZeroDowntime not preserved: %+v", gotS)
+	}
+
+	gotS.PrimaryDomainID = "dom-primary-updated"
+	gotS.ZeroDowntime = false
+	if err := repo.UpdateService(ctx, gotS); err != nil {
+		t.Fatalf("UpdateService failed: %v", err)
+	}
+	gotUpdatedS, err := repo.GetService(ctx, "s-zd")
+	if err != nil || gotUpdatedS.PrimaryDomainID != "dom-primary-updated" || gotUpdatedS.ZeroDowntime {
+		t.Errorf("Updated PrimaryDomainID or ZeroDowntime not preserved: %+v, err=%v", gotUpdatedS, err)
+	}
+}

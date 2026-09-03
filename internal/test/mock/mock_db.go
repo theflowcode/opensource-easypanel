@@ -30,6 +30,10 @@ type MockDatabasePort struct {
 	Users map[string]*domain.User
 	// Settings
 	Settings map[string]string
+	// Actions
+	Actions map[string]*domain.Action
+	// Storage Providers
+	StorageProviders map[string]*domain.StorageProvider
 
 	// Call tracking
 	Calls []string
@@ -41,14 +45,16 @@ type MockDatabasePort struct {
 
 func NewMockDatabasePort() *MockDatabasePort {
 	return &MockDatabasePort{
-		Projects:    make(map[string]*domain.Project),
-		Services:    make(map[string]*domain.Service),
-		Domains:     make(map[string]*domain.Domain),
-		Deployments: make(map[string]*domain.Deployment),
-		Backups:     make(map[string]*domain.Backup),
-		Sessions:    make(map[string]*domain.Session),
-		Users:       make(map[string]*domain.User),
-		Settings:    make(map[string]string),
+		Projects:         make(map[string]*domain.Project),
+		Services:         make(map[string]*domain.Service),
+		Domains:          make(map[string]*domain.Domain),
+		Deployments:      make(map[string]*domain.Deployment),
+		Backups:          make(map[string]*domain.Backup),
+		Sessions:         make(map[string]*domain.Session),
+		Users:            make(map[string]*domain.User),
+		Settings:         make(map[string]string),
+		Actions:          make(map[string]*domain.Action),
+		StorageProviders: make(map[string]*domain.StorageProvider),
 	}
 }
 
@@ -93,6 +99,8 @@ func (m *MockDatabasePort) Reset() {
 	m.Sessions = make(map[string]*domain.Session)
 	m.Users = make(map[string]*domain.User)
 	m.Settings = make(map[string]string)
+	m.Actions = make(map[string]*domain.Action)
+	m.StorageProviders = make(map[string]*domain.StorageProvider)
 	m.Calls = nil
 	m.MigrateFunc = nil
 	m.CloseFunc = nil

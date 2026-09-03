@@ -28,12 +28,14 @@ type Service struct {
 	RestartPolicy  string             `json:"restartPolicy,omitempty"`
 	HealthCheck    *HealthCheckConfig `json:"healthCheck,omitempty"`
 	CronJobs       []CronJobSpec      `json:"cronJobs,omitempty"`
-	DatabaseConfig *DatabaseConfig    `json:"databaseConfig,omitempty"`
-	Redirects      []RedirectRule     `json:"redirects,omitempty"`
-	Labels         map[string]string  `json:"labels,omitempty"`
-	Status         ServiceStatus      `json:"status"`
-	CreatedAt      time.Time          `json:"createdAt"`
-	UpdatedAt      time.Time          `json:"updatedAt"`
+	DatabaseConfig  *DatabaseConfig    `json:"databaseConfig,omitempty"`
+	Redirects       []RedirectRule     `json:"redirects,omitempty"`
+	PrimaryDomainID string             `json:"primaryDomainId,omitempty"`
+	ZeroDowntime    bool               `json:"zeroDowntime,omitempty"`
+	Labels          map[string]string  `json:"labels,omitempty"`
+	Status          ServiceStatus      `json:"status"`
+	CreatedAt       time.Time          `json:"createdAt"`
+	UpdatedAt       time.Time          `json:"updatedAt"`
 }
 
 // Validate checks that the service is well-formed.
@@ -128,10 +130,12 @@ func (s *Service) ToSpec() ServiceSpec {
 		Resources:      s.Resources,
 		RestartPolicy:  restartPolicy,
 		HealthCheck:    s.HealthCheck,
-		CronJobs:       s.CronJobs,
-		DatabaseConfig: s.DatabaseConfig,
-		Redirects:      s.Redirects,
-		Labels:         labels,
+		CronJobs:        s.CronJobs,
+		DatabaseConfig:  s.DatabaseConfig,
+		Redirects:       s.Redirects,
+		PrimaryDomainID: s.PrimaryDomainID,
+		ZeroDowntime:    s.ZeroDowntime,
+		Labels:          labels,
 	}
 }
 

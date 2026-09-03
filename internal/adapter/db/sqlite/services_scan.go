@@ -22,6 +22,7 @@ func (r *Repository) scanServiceRow(scanner rowScanner) (*domain.Service, error)
 		cronJobsJSON  string
 		dbCfgJSON     string
 		redirectsJSON string
+		zdInt         int
 		labelsJSON    string
 		status        string
 		argsJSON      string
@@ -36,7 +37,7 @@ func (r *Repository) scanServiceRow(scanner rowScanner) (*domain.Service, error)
 		&sourceType, &sourceCfgJSON, &s.Image, &s.Command, &argsJSON,
 		&envVarsJSON, &portsJSON, &volumesJSON, &domainsJSON, &s.Replicas,
 		&s.Resources.CPULimit, &s.Resources.MemoryLimit, &s.RestartPolicy, &healthJSON, &cronJobsJSON,
-		&dbCfgJSON, &redirectsJSON, &labelsJSON,
+		&dbCfgJSON, &redirectsJSON, &s.PrimaryDomainID, &zdInt, &labelsJSON,
 		&status, &s.CreatedAt, &s.UpdatedAt,
 	)
 	if errors.Is(err, sql.ErrNoRows) {
@@ -49,6 +50,7 @@ func (r *Repository) scanServiceRow(scanner rowScanner) (*domain.Service, error)
 	s.Type = domain.ServiceType(srvType)
 	s.SourceType = domain.ServiceSourceType(sourceType)
 	s.Status = domain.ServiceStatus(status)
+	s.ZeroDowntime = zdInt == 1
 
 	_ = json.Unmarshal([]byte(argsJSON), &s.Args)
 	_ = json.Unmarshal([]byte(envVarsJSON), &s.EnvVars)

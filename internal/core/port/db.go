@@ -68,4 +68,16 @@ type DatabasePort interface {
 	GetSetting(ctx context.Context, key string) (string, error)
 	SetSetting(ctx context.Context, key, val string) error
 	ListSettings(ctx context.Context) (map[string]string, error)
+
+	// Actions & Audit Trail
+	CreateAction(ctx context.Context, action *domain.Action) error
+	GetAction(ctx context.Context, id string) (*domain.Action, error)
+	UpdateAction(ctx context.Context, action *domain.Action) error
+	ListActions(ctx context.Context, projectName, serviceName string, limit, offset int) ([]*domain.Action, error)
+
+	// Storage Providers (Backup Targets)
+	CreateStorageProvider(ctx context.Context, sp *domain.StorageProvider) error
+	GetStorageProvider(ctx context.Context, id string) (*domain.StorageProvider, error)
+	ListStorageProviders(ctx context.Context) ([]*domain.StorageProvider, error)
+	DeleteStorageProvider(ctx context.Context, id string) error
 }

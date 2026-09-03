@@ -556,3 +556,87 @@ func TestProductionUIParityAndDatabaseEngines(t *testing.T) {
 		t.Errorf("Redirects not properly preserved in spec: %+v", spec.Redirects)
 	}
 }
+
+func TestActionsStorageProvidersAndMacros(t *testing.T) {
+	// 1. Action validation
+	a := domain.Action{}
+	if err := a.Validate(); err != domain.ErrValidation {
+		t.Errorf("expected ErrValidation on empty action, got %v", err)
+	}
+	a.ID = "act-1"
+	a.Type = domain.ActionTypeDeployment
+	if err := a.Validate(); err != nil {
+		t.Fatalf("Validate failed on valid action: %v", err)
+	}
+	if a.Status != domain.ActionStatusPending {
+		t.Errorf("expected default pending status, got %s", a.Status)
+	}
+
+	// 2. StorageProvider validation
+	sp := domain.StorageProvider{}
+	if err := sp.Validate(); err != domain.ErrValidation {
+		t.Errorf("expected ErrValidation on empty storage provider, got %v", err)
+	}
+	sp.ID = "sp-1"
+	sp.Name = "Local Disk"
+	if err := sp.Validate(); err != nil {
+		t.Fatalf("Validate failed on valid local storage provider: %v", err)
+	}
+	if sp.Type != domain.StorageProviderTypeLocal || sp.Path != "/etc/easypanel/backups" {
+		t.Errorf("unexpected local storage defaults: %+v", sp)
+	}
+
+	spS3 := domain.StorageProvider{
+		ID:   "sp-2",
+		Name: "S3 Remote",
+		Type: domain.StorageProviderTypeS3,
+	}
+	if err := spS3.Validate(); err != domain.ErrValidation {
+		t.Error("expected error on S3 provider without endpoint and bucket")
+	}
+	spS3.Endpoint = "https://s3.amazonaws.com"
+	spS3.Bucket = "my-backups"
+	if err := spS3.Validate(); err != nil {
+		t.Fatalf("Validate failed on valid S3 provider: %v", err)
+	}
+
+	// 3. Macro expansion
+	envVars := []domain.EnvVar{
+		{Key: "FRONTEND_URL", Value: "https://$(PRIMARY_DOMAIN)"},
+		{Key: "POSTGRES_HOST", Value: "$(PROJECT_NAME)_chatwoot-db"},
+	}
+	expanded := domain.ExpandEnvVars(envVars, map[string]string{
+		"PRIMARY_DOMAIN": "chatwoot.example.com",
+		"PROJECT_NAME":   "myfirstproject",
+	})
+	if expanded[0].Value != "https://chatwoot.example.com" {
+		t.Errorf("macro expansion failed for PRIMARY_DOMAIN: %s", expanded[0].Value)
+	}
+	if expanded[1].Value != "myfirstproject_chatwoot-db" {
+		t.Errorf("macro expansion failed for PROJECT_NAME: %s", expanded[1].Value)
+	}
+
+	// 4. VolumeMount type detection
+	vmVol, err := domain.ParseVolumeMount("myvol:/app/storage")
+	if err != nil || vmVol.Type != "volume" || vmVol.Name != "myvol" {
+		t.Errorf("expected volume mount, got %+v", vmVol)
+	}
+	vmBind, err := domain.ParseVolumeMount("/etc/data:/app/data")
+	if err != nil || vmBind.Type != "bind" || vmBind.HostPath != "/etc/data" {
+		t.Errorf("expected bind mount, got %+v", vmBind)
+	}
+
+	// 5. PrimaryDomainID and ZeroDowntime in Service ToSpec
+	srv := domain.Service{
+		ID:              "s-zd",
+		ProjectID:       "p-1",
+		Name:            "web",
+		Image:           "nginx:alpine",
+		PrimaryDomainID: "dom-123",
+		ZeroDowntime:    true,
+	}
+	spec := srv.ToSpec()
+	if spec.PrimaryDomainID != "dom-123" || !spec.ZeroDowntime {
+		t.Errorf("ToSpec did not propagate PrimaryDomainID or ZeroDowntime: %+v", spec)
+	}
+}

@@ -100,6 +100,7 @@ type PortMapping struct {
 
 // VolumeMount specifies container volume persistence.
 type VolumeMount struct {
+	Type          string `json:"type,omitempty"` // "volume" or "bind"
 	Name          string `json:"name"`
 	HostPath      string `json:"hostPath,omitempty"`
 	ContainerPath string `json:"containerPath"`
@@ -157,10 +158,12 @@ type ServiceSpec struct {
 	Resources      ResourceLimits     `json:"resources"`
 	RestartPolicy  string             `json:"restartPolicy,omitempty"`
 	HealthCheck    *HealthCheckConfig `json:"healthCheck,omitempty"`
-	CronJobs       []CronJobSpec      `json:"cronJobs,omitempty"`
-	DatabaseConfig *DatabaseConfig    `json:"databaseConfig,omitempty"`
-	Redirects      []RedirectRule     `json:"redirects,omitempty"`
-	Labels         map[string]string  `json:"labels,omitempty"`
+	CronJobs        []CronJobSpec      `json:"cronJobs,omitempty"`
+	DatabaseConfig  *DatabaseConfig    `json:"databaseConfig,omitempty"`
+	Redirects       []RedirectRule     `json:"redirects,omitempty"`
+	PrimaryDomainID string             `json:"primaryDomainId,omitempty"`
+	ZeroDowntime    bool               `json:"zeroDowntime,omitempty"`
+	Labels          map[string]string  `json:"labels,omitempty"`
 }
 
 // DeployResult returns the outcome of deploying a service.

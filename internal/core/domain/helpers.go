@@ -149,10 +149,32 @@ func ParseVolumeMount(s string) (VolumeMount, error) {
 		ReadOnly:      readOnly,
 	}
 	if strings.HasPrefix(src, "/") || strings.HasPrefix(src, "./") {
+		vm.Type = "bind"
 		vm.HostPath = src
 		vm.Name = ""
 	} else {
+		vm.Type = "volume"
 		vm.Name = src
 	}
 	return vm, nil
+}
+
+// ExpandEnvVars replaces macros like $(PROJECT_NAME) or $(PRIMARY_DOMAIN) in env var values.
+func ExpandEnvVars(envVars []EnvVar, macros map[string]string) []EnvVar {
+	if len(envVars) == 0 || len(macros) == 0 {
+		return envVars
+	}
+	out := make([]EnvVar, len(envVars))
+	for i, ev := range envVars {
+		val := ev.Value
+		for k, v := range macros {
+			val = strings.ReplaceAll(val, "$("+k+")", v)
+		}
+		out[i] = EnvVar{
+			Key:      ev.Key,
+			Value:    val,
+			IsSecret: ev.IsSecret,
+		}
+	}
+	return out
 }

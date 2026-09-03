@@ -173,6 +173,47 @@ ALTER TABLE services ADD COLUMN database_config TEXT NOT NULL DEFAULT '{}';
 ALTER TABLE services ADD COLUMN redirects TEXT NOT NULL DEFAULT '[]';
 `,
 	},
+	{
+		version: 6,
+		name:    "add_actions_storage_providers_and_service_options",
+		sql: `
+ALTER TABLE services ADD COLUMN primary_domain_id TEXT NOT NULL DEFAULT '';
+ALTER TABLE services ADD COLUMN zero_downtime INTEGER NOT NULL DEFAULT 1;
+
+CREATE TABLE IF NOT EXISTS actions (
+    id TEXT PRIMARY KEY,
+    project_name TEXT NOT NULL DEFAULT '',
+    service_name TEXT NOT NULL DEFAULT '',
+    type TEXT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'pending',
+    description TEXT NOT NULL DEFAULT '',
+    no_kill INTEGER NOT NULL DEFAULT 0,
+    no_logs INTEGER NOT NULL DEFAULT 0,
+    created_at DATETIME NOT NULL,
+    updated_at DATETIME NOT NULL,
+    user_id TEXT NOT NULL DEFAULT '',
+    is_api_action INTEGER NOT NULL DEFAULT 0,
+    is_system_action INTEGER NOT NULL DEFAULT 0,
+    meta TEXT NOT NULL DEFAULT '{}'
+);
+CREATE INDEX IF NOT EXISTS idx_actions_project_service ON actions (project_name, service_name);
+CREATE INDEX IF NOT EXISTS idx_actions_type ON actions (type);
+
+CREATE TABLE IF NOT EXISTS storage_providers (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    type TEXT NOT NULL DEFAULT 'local',
+    path TEXT NOT NULL DEFAULT '',
+    endpoint TEXT NOT NULL DEFAULT '',
+    bucket TEXT NOT NULL DEFAULT '',
+    region TEXT NOT NULL DEFAULT '',
+    access_key TEXT NOT NULL DEFAULT '',
+    secret_key TEXT NOT NULL DEFAULT '',
+    created_at DATETIME NOT NULL,
+    updated_at DATETIME NOT NULL
+);
+`,
+	},
 }
 
 func runMigrations(ctx context.Context, q queryer) error {
