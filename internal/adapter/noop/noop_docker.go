@@ -51,6 +51,29 @@ func (n *NoOpDocker) PullImage(ctx context.Context, image string, auth *domain.R
 	return nil
 }
 
+func (n *NoOpDocker) GetDockerInfo(ctx context.Context) (*domain.DockerInfo, error) {
+	return &domain.DockerInfo{
+		ServerVersion:     "noop-docker/24.0.0",
+		SwarmActive:       false,
+		IsManager:         false,
+		ContainersTotal:   0,
+		ContainersRunning: 0,
+		ImagesTotal:       0,
+	}, nil
+}
+
+func (n *NoOpDocker) GetHostMetrics(ctx context.Context) (*domain.HostMetrics, error) {
+	return &domain.HostMetrics{
+		CPUPercent:       0.0,
+		MemoryUsedBytes:  0,
+		MemoryTotalBytes: 1024 * 1024 * 1024,
+		DiskUsedBytes:    0,
+		DiskTotalBytes:   10 * 1024 * 1024 * 1024,
+		UptimeSeconds:    3600,
+		ReadAt:           time.Now().UTC(),
+	}, nil
+}
+
 func (n *NoOpDocker) GetServiceStatus(ctx context.Context, serviceID string) (*domain.ServiceStatus, error) {
 	st := domain.ServiceStatusRunning
 	return &st, nil

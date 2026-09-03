@@ -22,6 +22,8 @@ type MockDatabasePort struct {
 	Domains map[string]*domain.Domain
 	// Deployments
 	Deployments map[string]*domain.Deployment
+	// Backups
+	Backups map[string]*domain.Backup
 	// Users
 	Users map[string]*domain.User
 	// Settings
@@ -41,6 +43,7 @@ func NewMockDatabasePort() *MockDatabasePort {
 		Services:    make(map[string]*domain.Service),
 		Domains:     make(map[string]*domain.Domain),
 		Deployments: make(map[string]*domain.Deployment),
+		Backups:     make(map[string]*domain.Backup),
 		Users:       make(map[string]*domain.User),
 		Settings:    make(map[string]string),
 	}
@@ -83,6 +86,7 @@ func (m *MockDatabasePort) Reset() {
 	m.Services = make(map[string]*domain.Service)
 	m.Domains = make(map[string]*domain.Domain)
 	m.Deployments = make(map[string]*domain.Deployment)
+	m.Backups = make(map[string]*domain.Backup)
 	m.Users = make(map[string]*domain.User)
 	m.Settings = make(map[string]string)
 	m.Calls = nil

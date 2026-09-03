@@ -5,9 +5,9 @@
 # ------------------------------------------------------------------------------
 # 1. Compiled Binaries & Build Outputs
 # ------------------------------------------------------------------------------
-bin/
-dist/
-build/
+/bin/
+/dist/
+/build/
 openpanel
 openpanel-*
 *.exe
@@ -34,7 +34,8 @@ vendor/
 # 3. Frontend & Node Ecosystem
 # ------------------------------------------------------------------------------
 node_modules/
-frontend/dist/
+frontend/dist/*
+!frontend/dist/.gitkeep
 frontend/.vite/
 .pnpm-store/
 npm-debug.log*

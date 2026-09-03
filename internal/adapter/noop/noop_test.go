@@ -52,6 +52,14 @@ func TestNoOpAdapters(t *testing.T) {
 	if err != nil || stats == nil {
 		t.Errorf("NoOpDocker.GetServiceStats failed: %v", err)
 	}
+	info, err := d.GetDockerInfo(ctx)
+	if err != nil || info == nil || info.ServerVersion == "" {
+		t.Errorf("NoOpDocker.GetDockerInfo failed: %v", err)
+	}
+	metrics, err := d.GetHostMetrics(ctx)
+	if err != nil || metrics == nil || metrics.MemoryTotalBytes == 0 {
+		t.Errorf("NoOpDocker.GetHostMetrics failed: %v", err)
+	}
 	var buf bytes.Buffer
 	if err := d.StreamServiceLogs(ctx, "srv-1", domain.LogStreamOptions{TailLines: 100}, &buf, &buf); err != nil {
 		t.Errorf("NoOpDocker.StreamServiceLogs failed: %v", err)

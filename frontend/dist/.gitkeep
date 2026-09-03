@@ -1,0 +1,1 @@
+# This file ensures frontend/dist exists for Go single-binary embed anchor (//go:embed all:frontend/dist)

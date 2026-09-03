@@ -11,6 +11,7 @@ type Service struct {
 	ProjectID     string             `json:"projectId"`
 	Name          string             `json:"name"`
 	Type          ServiceType        `json:"type"`
+	DeployToken   string             `json:"deployToken,omitempty"`
 	SourceType    ServiceSourceType  `json:"sourceType"`
 	SourceConfig  *SourceConfig      `json:"sourceConfig,omitempty"`
 	Image         string             `json:"image"`
@@ -24,6 +25,7 @@ type Service struct {
 	Resources     ResourceLimits     `json:"resources"`
 	RestartPolicy string             `json:"restartPolicy,omitempty"`
 	HealthCheck   *HealthCheckConfig `json:"healthCheck,omitempty"`
+	CronJobs      []CronJobSpec      `json:"cronJobs,omitempty"`
 	Labels        map[string]string  `json:"labels,omitempty"`
 	Status        ServiceStatus      `json:"status"`
 	CreatedAt     time.Time          `json:"createdAt"`
@@ -40,6 +42,9 @@ func (s *Service) Validate() error {
 	}
 	if strings.TrimSpace(s.Name) == "" {
 		return ErrValidation
+	}
+	if strings.TrimSpace(s.DeployToken) == "" {
+		s.DeployToken = NewID()
 	}
 	if s.SourceType == "" {
 		s.SourceType = SourceTypeImage
@@ -83,6 +88,7 @@ func (s *Service) ToSpec() ServiceSpec {
 		ProjectID:     s.ProjectID,
 		Name:          s.Name,
 		Type:          s.Type,
+		DeployToken:   s.DeployToken,
 		SourceType:    s.SourceType,
 		SourceConfig:  s.SourceConfig,
 		Image:         s.Image,
@@ -95,6 +101,7 @@ func (s *Service) ToSpec() ServiceSpec {
 		Resources:     s.Resources,
 		RestartPolicy: restartPolicy,
 		HealthCheck:   s.HealthCheck,
+		CronJobs:      s.CronJobs,
 		Labels:        labels,
 	}
 }

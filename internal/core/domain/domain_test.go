@@ -423,3 +423,45 @@ func TestServiceSourceTypeValidation(t *testing.T) {
 		t.Errorf("expected easypanel.service label, got %+v", spec.Labels)
 	}
 }
+
+func TestServiceDeployTokenAndCronJobs(t *testing.T) {
+	s := domain.Service{
+		ID:        "s-cron",
+		ProjectID: "p-1",
+		Name:      "cron-app",
+		Image:     "alpine:latest",
+		CronJobs: []domain.CronJobSpec{
+			{ID: "c-1", Name: "daily", Schedule: "@daily", Command: "echo hi"},
+		},
+	}
+	if err := s.Validate(); err != nil {
+		t.Fatalf("Validate failed: %v", err)
+	}
+	if s.DeployToken == "" {
+		t.Error("expected auto-generated DeployToken")
+	}
+
+	spec := s.ToSpec()
+	if spec.DeployToken != s.DeployToken {
+		t.Errorf("expected DeployToken to match in spec: %s != %s", spec.DeployToken, s.DeployToken)
+	}
+	if len(spec.CronJobs) != 1 || spec.CronJobs[0].Schedule != "@daily" {
+		t.Errorf("CronJobs not properly preserved in spec: %+v", spec.CronJobs)
+	}
+}
+
+func TestBackupValidation(t *testing.T) {
+	b := domain.Backup{}
+	if err := b.Validate(); err != domain.ErrValidation {
+		t.Errorf("expected ErrValidation for empty backup, got %v", err)
+	}
+
+	b = domain.Backup{
+		ID:        "b-1",
+		ServiceID: "s-1",
+		FileName:  "db.sql",
+	}
+	if err := b.Validate(); err != nil {
+		t.Errorf("expected valid backup, got %v", err)
+	}
+}

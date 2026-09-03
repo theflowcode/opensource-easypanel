@@ -66,6 +66,19 @@ func (m *MockDatabasePort) GetServiceByName(ctx context.Context, projectID, name
 	return nil, domain.ErrNotFound
 }
 
+func (m *MockDatabasePort) GetServiceByDeployToken(ctx context.Context, token string) (*domain.Service, error) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+
+	for _, s := range m.Services {
+		if s.DeployToken == token && token != "" {
+			clone := *s
+			return &clone, nil
+		}
+	}
+	return nil, domain.ErrNotFound
+}
+
 func (m *MockDatabasePort) ListServicesByProject(ctx context.Context, projectID string) ([]*domain.Service, error) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()

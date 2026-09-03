@@ -32,6 +32,7 @@ CREATE TABLE IF NOT EXISTS services (
     project_id TEXT NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
     name TEXT NOT NULL,
     type TEXT NOT NULL,
+    deploy_token TEXT NOT NULL DEFAULT '',
     source_type TEXT NOT NULL DEFAULT 'image',
     source_config TEXT NOT NULL DEFAULT '{}',
     image TEXT NOT NULL DEFAULT '',
@@ -46,6 +47,7 @@ CREATE TABLE IF NOT EXISTS services (
     memory_limit INTEGER NOT NULL DEFAULT 0,
     restart_policy TEXT NOT NULL DEFAULT 'unless-stopped',
     health_check TEXT NOT NULL DEFAULT '{}',
+    cron_jobs TEXT NOT NULL DEFAULT '[]',
     labels TEXT NOT NULL DEFAULT '{}',
     status TEXT NOT NULL DEFAULT 'stopped',
     created_at DATETIME NOT NULL,
@@ -54,6 +56,7 @@ CREATE TABLE IF NOT EXISTS services (
 );
 
 CREATE INDEX IF NOT EXISTS idx_services_project_id ON services(project_id);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_services_deploy_token ON services(deploy_token) WHERE deploy_token != '';
 
 CREATE TABLE IF NOT EXISTS domains (
     id TEXT PRIMARY KEY,
@@ -85,6 +88,18 @@ CREATE TABLE IF NOT EXISTS deployments (
 
 CREATE INDEX IF NOT EXISTS idx_deployments_service_id ON deployments(service_id);
 
+CREATE TABLE IF NOT EXISTS backups (
+    id TEXT PRIMARY KEY,
+    service_id TEXT NOT NULL REFERENCES services(id) ON DELETE CASCADE,
+    status TEXT NOT NULL DEFAULT 'pending',
+    file_name TEXT NOT NULL,
+    size_bytes INTEGER NOT NULL DEFAULT 0,
+    started_at DATETIME NOT NULL,
+    finished_at DATETIME
+);
+
+CREATE INDEX IF NOT EXISTS idx_backups_service_id ON backups(service_id);
+
 CREATE TABLE IF NOT EXISTS users (
     id TEXT PRIMARY KEY,
     email TEXT NOT NULL UNIQUE,
@@ -98,6 +113,22 @@ CREATE TABLE IF NOT EXISTS settings (
     key TEXT PRIMARY KEY,
     val TEXT NOT NULL
 );
+`,
+	},
+	{
+		version: 2,
+		name:    "add_backups_and_cron_jobs",
+		sql: `
+CREATE TABLE IF NOT EXISTS backups (
+    id TEXT PRIMARY KEY,
+    service_id TEXT NOT NULL REFERENCES services(id) ON DELETE CASCADE,
+    status TEXT NOT NULL DEFAULT 'pending',
+    file_name TEXT NOT NULL,
+    size_bytes INTEGER NOT NULL DEFAULT 0,
+    started_at DATETIME NOT NULL,
+    finished_at DATETIME
+);
+CREATE INDEX IF NOT EXISTS idx_backups_service_id ON backups(service_id);
 `,
 	},
 }

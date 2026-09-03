@@ -2,9 +2,7 @@ package sqlite
 
 import (
 	"context"
-	"database/sql"
 	"encoding/json"
-	"errors"
 	"strings"
 	"time"
 
@@ -38,6 +36,7 @@ func (r *Repository) CreateService(ctx context.Context, s *domain.Service) error
 	domainsJSON, _ := json.Marshal(s.Domains)
 	sourceCfgJSON, _ := json.Marshal(s.SourceConfig)
 	healthJSON, _ := json.Marshal(s.HealthCheck)
+	cronJobsJSON, _ := json.Marshal(s.CronJobs)
 	labelsJSON, _ := json.Marshal(s.Labels)
 
 	replicas := s.Replicas
@@ -51,16 +50,16 @@ func (r *Repository) CreateService(ctx context.Context, s *domain.Service) error
 
 	query := `
 		INSERT INTO services (
-			id, project_id, name, type, source_type, source_config, image, command, args,
+			id, project_id, name, type, deploy_token, source_type, source_config, image, command, args,
 			env_vars, ports, volumes, domains, replicas,
-			cpu_limit, memory_limit, restart_policy, health_check, labels,
+			cpu_limit, memory_limit, restart_policy, health_check, cron_jobs, labels,
 			status, created_at, updated_at
-		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 	`
 	_, err := r.q.ExecContext(ctx, query,
-		s.ID, s.ProjectID, s.Name, string(s.Type), string(s.SourceType), string(sourceCfgJSON), s.Image, s.Command, string(argsJSON),
+		s.ID, s.ProjectID, s.Name, string(s.Type), s.DeployToken, string(s.SourceType), string(sourceCfgJSON), s.Image, s.Command, string(argsJSON),
 		string(envVarsJSON), string(portsJSON), string(volumesJSON), string(domainsJSON), replicas,
-		s.Resources.CPULimit, s.Resources.MemoryLimit, restartPolicy, string(healthJSON), string(labelsJSON),
+		s.Resources.CPULimit, s.Resources.MemoryLimit, restartPolicy, string(healthJSON), string(cronJobsJSON), string(labelsJSON),
 		string(s.Status), s.CreatedAt, s.UpdatedAt,
 	)
 	if err != nil {
@@ -80,9 +79,9 @@ func (r *Repository) GetService(ctx context.Context, id string) (*domain.Service
 	defer r.mu.RUnlock()
 
 	query := `
-		SELECT id, project_id, name, type, source_type, source_config, image, command, args,
+		SELECT id, project_id, name, type, deploy_token, source_type, source_config, image, command, args,
 		       env_vars, ports, volumes, domains, replicas,
-		       cpu_limit, memory_limit, restart_policy, health_check, labels,
+		       cpu_limit, memory_limit, restart_policy, health_check, cron_jobs, labels,
 		       status, created_at, updated_at
 		FROM services WHERE id = ?
 	`
@@ -95,13 +94,32 @@ func (r *Repository) GetServiceByName(ctx context.Context, projectID, name strin
 	defer r.mu.RUnlock()
 
 	query := `
-		SELECT id, project_id, name, type, source_type, source_config, image, command, args,
+		SELECT id, project_id, name, type, deploy_token, source_type, source_config, image, command, args,
 		       env_vars, ports, volumes, domains, replicas,
-		       cpu_limit, memory_limit, restart_policy, health_check, labels,
+		       cpu_limit, memory_limit, restart_policy, health_check, cron_jobs, labels,
 		       status, created_at, updated_at
 		FROM services WHERE project_id = ? AND name = ?
 	`
 	row := r.q.QueryRowContext(ctx, query, projectID, name)
+	return r.scanService(row)
+}
+
+func (r *Repository) GetServiceByDeployToken(ctx context.Context, token string) (*domain.Service, error) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+
+	if strings.TrimSpace(token) == "" {
+		return nil, domain.ErrNotFound
+	}
+
+	query := `
+		SELECT id, project_id, name, type, deploy_token, source_type, source_config, image, command, args,
+		       env_vars, ports, volumes, domains, replicas,
+		       cpu_limit, memory_limit, restart_policy, health_check, cron_jobs, labels,
+		       status, created_at, updated_at
+		FROM services WHERE deploy_token = ?
+	`
+	row := r.q.QueryRowContext(ctx, query, token)
 	return r.scanService(row)
 }
 
@@ -110,9 +128,9 @@ func (r *Repository) ListServicesByProject(ctx context.Context, projectID string
 	defer r.mu.RUnlock()
 
 	query := `
-		SELECT id, project_id, name, type, source_type, source_config, image, command, args,
+		SELECT id, project_id, name, type, deploy_token, source_type, source_config, image, command, args,
 		       env_vars, ports, volumes, domains, replicas,
-		       cpu_limit, memory_limit, restart_policy, health_check, labels,
+		       cpu_limit, memory_limit, restart_policy, health_check, cron_jobs, labels,
 		       status, created_at, updated_at
 		FROM services WHERE project_id = ? ORDER BY created_at ASC
 	`
@@ -138,9 +156,9 @@ func (r *Repository) ListAllServices(ctx context.Context) ([]*domain.Service, er
 	defer r.mu.RUnlock()
 
 	query := `
-		SELECT id, project_id, name, type, source_type, source_config, image, command, args,
+		SELECT id, project_id, name, type, deploy_token, source_type, source_config, image, command, args,
 		       env_vars, ports, volumes, domains, replicas,
-		       cpu_limit, memory_limit, restart_policy, health_check, labels,
+		       cpu_limit, memory_limit, restart_policy, health_check, cron_jobs, labels,
 		       status, created_at, updated_at
 		FROM services ORDER BY created_at ASC
 	`
@@ -177,6 +195,7 @@ func (r *Repository) UpdateService(ctx context.Context, s *domain.Service) error
 	domainsJSON, _ := json.Marshal(s.Domains)
 	sourceCfgJSON, _ := json.Marshal(s.SourceConfig)
 	healthJSON, _ := json.Marshal(s.HealthCheck)
+	cronJobsJSON, _ := json.Marshal(s.CronJobs)
 	labelsJSON, _ := json.Marshal(s.Labels)
 
 	replicas := s.Replicas
@@ -190,16 +209,16 @@ func (r *Repository) UpdateService(ctx context.Context, s *domain.Service) error
 
 	query := `
 		UPDATE services SET
-			name = ?, type = ?, source_type = ?, source_config = ?, image = ?, command = ?, args = ?,
+			name = ?, type = ?, deploy_token = ?, source_type = ?, source_config = ?, image = ?, command = ?, args = ?,
 			env_vars = ?, ports = ?, volumes = ?, domains = ?, replicas = ?,
-			cpu_limit = ?, memory_limit = ?, restart_policy = ?, health_check = ?, labels = ?,
+			cpu_limit = ?, memory_limit = ?, restart_policy = ?, health_check = ?, cron_jobs = ?, labels = ?,
 			status = ?, updated_at = ?
 		WHERE id = ?
 	`
 	res, err := r.q.ExecContext(ctx, query,
-		s.Name, string(s.Type), string(s.SourceType), string(sourceCfgJSON), s.Image, s.Command, string(argsJSON),
+		s.Name, string(s.Type), s.DeployToken, string(s.SourceType), string(sourceCfgJSON), s.Image, s.Command, string(argsJSON),
 		string(envVarsJSON), string(portsJSON), string(volumesJSON), string(domainsJSON), replicas,
-		s.Resources.CPULimit, s.Resources.MemoryLimit, restartPolicy, string(healthJSON), string(labelsJSON),
+		s.Resources.CPULimit, s.Resources.MemoryLimit, restartPolicy, string(healthJSON), string(cronJobsJSON), string(labelsJSON),
 		string(s.Status), s.UpdatedAt, s.ID,
 	)
 	if err != nil {
@@ -236,53 +255,4 @@ func (r *Repository) DeleteService(ctx context.Context, id string) error {
 		return domain.ErrNotFound
 	}
 	return nil
-}
-
-func (r *Repository) scanService(row *sql.Row) (*domain.Service, error) {
-	return r.scanServiceRow(row)
-}
-
-func (r *Repository) scanServiceRow(scanner rowScanner) (*domain.Service, error) {
-	var (
-		s             domain.Service
-		srvType       string
-		sourceType    string
-		sourceCfgJSON string
-		healthJSON    string
-		labelsJSON    string
-		status        string
-		argsJSON      string
-		envVarsJSON   string
-		portsJSON     string
-		volumesJSON   string
-		domainsJSON   string
-	)
-
-	err := scanner.Scan(
-		&s.ID, &s.ProjectID, &s.Name, &srvType, &sourceType, &sourceCfgJSON, &s.Image, &s.Command, &argsJSON,
-		&envVarsJSON, &portsJSON, &volumesJSON, &domainsJSON, &s.Replicas,
-		&s.Resources.CPULimit, &s.Resources.MemoryLimit, &s.RestartPolicy, &healthJSON, &labelsJSON,
-		&status, &s.CreatedAt, &s.UpdatedAt,
-	)
-	if errors.Is(err, sql.ErrNoRows) {
-		return nil, domain.ErrNotFound
-	}
-	if err != nil {
-		return nil, err
-	}
-
-	s.Type = domain.ServiceType(srvType)
-	s.SourceType = domain.ServiceSourceType(sourceType)
-	s.Status = domain.ServiceStatus(status)
-
-	_ = json.Unmarshal([]byte(argsJSON), &s.Args)
-	_ = json.Unmarshal([]byte(envVarsJSON), &s.EnvVars)
-	_ = json.Unmarshal([]byte(portsJSON), &s.Ports)
-	_ = json.Unmarshal([]byte(volumesJSON), &s.Volumes)
-	_ = json.Unmarshal([]byte(domainsJSON), &s.Domains)
-	_ = json.Unmarshal([]byte(sourceCfgJSON), &s.SourceConfig)
-	_ = json.Unmarshal([]byte(healthJSON), &s.HealthCheck)
-	_ = json.Unmarshal([]byte(labelsJSON), &s.Labels)
-
-	return &s, nil
 }

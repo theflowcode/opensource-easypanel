@@ -118,12 +118,21 @@ type ResourceLimits struct {
 	MemoryLimit int64   `json:"memoryLimit"` // In megabytes (e.g. 256, 512)
 }
 
+// CronJobSpec defines a scheduled background worker task inside a service.
+type CronJobSpec struct {
+	ID       string `json:"id"`
+	Name     string `json:"name"`
+	Schedule string `json:"schedule"` // Standard cron expression e.g. "0 0 * * *"
+	Command  string `json:"command"`
+}
+
 // ServiceSpec is the deployment specification passed to DockerPort.
 type ServiceSpec struct {
 	ID            string             `json:"id"`
 	ProjectID     string             `json:"projectId"`
 	Name          string             `json:"name"`
 	Type          ServiceType        `json:"type"`
+	DeployToken   string             `json:"deployToken,omitempty"`
 	SourceType    ServiceSourceType  `json:"sourceType"`
 	SourceConfig  *SourceConfig      `json:"sourceConfig,omitempty"`
 	Image         string             `json:"image"`
@@ -136,6 +145,7 @@ type ServiceSpec struct {
 	Resources     ResourceLimits     `json:"resources"`
 	RestartPolicy string             `json:"restartPolicy,omitempty"`
 	HealthCheck   *HealthCheckConfig `json:"healthCheck,omitempty"`
+	CronJobs      []CronJobSpec      `json:"cronJobs,omitempty"`
 	Labels        map[string]string  `json:"labels,omitempty"`
 }
 

@@ -20,6 +20,8 @@ type DockerPort interface {
 	PullImage(ctx context.Context, image string, auth *domain.RegistryAuth, logWriter io.Writer) error
 
 	// Inspection, Monitoring & Streaming
+	GetDockerInfo(ctx context.Context) (*domain.DockerInfo, error)
+	GetHostMetrics(ctx context.Context) (*domain.HostMetrics, error)
 	GetServiceStatus(ctx context.Context, serviceID string) (*domain.ServiceStatus, error)
 	GetServiceStats(ctx context.Context, serviceID string) (*domain.ServiceStats, error)
 	StreamServiceLogs(ctx context.Context, serviceID string, opts domain.LogStreamOptions, stdout, stderr io.Writer) error

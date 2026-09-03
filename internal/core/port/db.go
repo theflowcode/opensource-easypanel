@@ -25,6 +25,7 @@ type DatabasePort interface {
 	CreateService(ctx context.Context, service *domain.Service) error
 	GetService(ctx context.Context, id string) (*domain.Service, error)
 	GetServiceByName(ctx context.Context, projectID, name string) (*domain.Service, error)
+	GetServiceByDeployToken(ctx context.Context, token string) (*domain.Service, error)
 	ListServicesByProject(ctx context.Context, projectID string) ([]*domain.Service, error)
 	ListAllServices(ctx context.Context) ([]*domain.Service, error)
 	UpdateService(ctx context.Context, service *domain.Service) error
@@ -42,6 +43,12 @@ type DatabasePort interface {
 	GetDeployment(ctx context.Context, id string) (*domain.Deployment, error)
 	ListDeploymentsByService(ctx context.Context, serviceID string, limit, offset int) ([]*domain.Deployment, error)
 	UpdateDeployment(ctx context.Context, deployment *domain.Deployment) error
+
+	// Backups
+	CreateBackup(ctx context.Context, backup *domain.Backup) error
+	GetBackup(ctx context.Context, id string) (*domain.Backup, error)
+	ListBackupsByService(ctx context.Context, serviceID string, limit, offset int) ([]*domain.Backup, error)
+	DeleteBackup(ctx context.Context, id string) error
 
 	// Users & Auth
 	CreateUser(ctx context.Context, user *domain.User) error
