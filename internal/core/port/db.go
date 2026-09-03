@@ -58,6 +58,12 @@ type DatabasePort interface {
 	UpdateUser(ctx context.Context, user *domain.User) error
 	DeleteUser(ctx context.Context, id string) error
 
+	// Sessions & API Tokens
+	CreateSession(ctx context.Context, session *domain.Session) error
+	GetSession(ctx context.Context, tokenHash string) (*domain.Session, error)
+	DeleteSession(ctx context.Context, id string) error
+	DeleteExpiredSessions(ctx context.Context) error
+
 	// Settings
 	GetSetting(ctx context.Context, key string) (string, error)
 	SetSetting(ctx context.Context, key, val string) error

@@ -5,6 +5,11 @@ import (
 	"time"
 )
 
+const (
+	RoleAdmin  = "admin"
+	RoleViewer = "viewer"
+)
+
 // User represents an authorized user in OpenSource Easypanel.
 type User struct {
 	ID           string    `json:"id"`

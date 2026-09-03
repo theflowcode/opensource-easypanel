@@ -465,3 +465,30 @@ func TestBackupValidation(t *testing.T) {
 		t.Errorf("expected valid backup, got %v", err)
 	}
 }
+
+func TestSessionValidationAndExpiration(t *testing.T) {
+	s := domain.Session{}
+	if err := s.Validate(); err != domain.ErrValidation {
+		t.Errorf("expected ErrValidation for empty session, got %v", err)
+	}
+
+	now := time.Now().UTC()
+	s = domain.Session{
+		ID:        "sess-1",
+		UserID:    "u-1",
+		TokenHash: "hash123",
+		ExpiresAt: now.Add(1 * time.Hour),
+		CreatedAt: now,
+	}
+	if err := s.Validate(); err != nil {
+		t.Errorf("expected valid session, got %v", err)
+	}
+	if s.IsExpired() {
+		t.Error("session with future expiry should not be expired")
+	}
+
+	s.ExpiresAt = now.Add(-1 * time.Minute)
+	if !s.IsExpired() {
+		t.Error("session with past expiry should be expired")
+	}
+}

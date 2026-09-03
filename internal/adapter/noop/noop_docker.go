@@ -108,3 +108,7 @@ func (n *NoOpDocker) EnsureVolume(ctx context.Context, volumeName string) error 
 func (n *NoOpDocker) ListContainers(ctx context.Context) ([]domain.ContainerSummary, error) {
 	return []domain.ContainerSummary{}, nil
 }
+
+func (n *NoOpDocker) PruneSystem(ctx context.Context) error {
+	return nil
+}

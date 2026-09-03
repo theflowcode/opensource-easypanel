@@ -32,6 +32,7 @@ type MockDockerPort struct {
 	EnsureNetworkFunc       func(ctx context.Context, networkName string) error
 	EnsureVolumeFunc        func(ctx context.Context, volumeName string) error
 	ListContainersFunc      func(ctx context.Context) ([]domain.ContainerSummary, error)
+	PruneSystemFunc         func(ctx context.Context) error
 
 	// Call tracking
 	Calls []string
@@ -73,6 +74,7 @@ func (m *MockDockerPort) Reset() {
 	m.EnsureNetworkFunc = nil
 	m.EnsureVolumeFunc = nil
 	m.ListContainersFunc = nil
+	m.PruneSystemFunc = nil
 }
 
 func (m *MockDockerPort) DeployService(ctx context.Context, spec domain.ServiceSpec) (*domain.DeployResult, error) {
@@ -284,4 +286,14 @@ func (m *MockDockerPort) GetHostMetrics(ctx context.Context) (*domain.HostMetric
 		UptimeSeconds:    86400,
 		ReadAt:           time.Now().UTC(),
 	}, nil
+}
+
+func (m *MockDockerPort) PruneSystem(ctx context.Context) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.Calls = append(m.Calls, "PruneSystem")
+	if m.PruneSystemFunc != nil {
+		return m.PruneSystemFunc(ctx)
+	}
+	return nil
 }

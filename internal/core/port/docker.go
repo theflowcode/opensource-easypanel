@@ -27,8 +27,9 @@ type DockerPort interface {
 	StreamServiceLogs(ctx context.Context, serviceID string, opts domain.LogStreamOptions, stdout, stderr io.Writer) error
 	ExecServiceTerminal(ctx context.Context, serviceID string, stdin io.Reader, stdout, stderr io.Writer, resizeChan <-chan domain.TerminalSize) error
 
-	// Infrastructure Management
+	// Infrastructure Management & Maintenance
 	EnsureNetwork(ctx context.Context, networkName string) error
 	EnsureVolume(ctx context.Context, volumeName string) error
 	ListContainers(ctx context.Context) ([]domain.ContainerSummary, error)
+	PruneSystem(ctx context.Context) error
 }

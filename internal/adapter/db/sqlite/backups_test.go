@@ -93,3 +93,66 @@ func TestBackupsCRUDAndCascades(t *testing.T) {
 		t.Errorf("expected backup to be cascade deleted, got %v", err)
 	}
 }
+
+func TestSessionsCRUDAndCascades(t *testing.T) {
+	repo := setupTestDB(t)
+	ctx := context.Background()
+
+	u := &domain.User{
+		ID:           "u-sess",
+		Email:        "sess@example.com",
+		PasswordHash: "bcrypt-hash",
+		Role:         domain.RoleAdmin,
+	}
+	if err := repo.CreateUser(ctx, u); err != nil {
+		t.Fatalf("CreateUser failed: %v", err)
+	}
+
+	now := time.Now().UTC()
+	sessActive := &domain.Session{
+		ID:        "sess-act",
+		UserID:    "u-sess",
+		TokenHash: "token-active-hash",
+		ExpiresAt: now.Add(24 * time.Hour),
+		CreatedAt: now,
+	}
+	if err := repo.CreateSession(ctx, sessActive); err != nil {
+		t.Fatalf("CreateSession active failed: %v", err)
+	}
+
+	sessExpired := &domain.Session{
+		ID:        "sess-exp",
+		UserID:    "u-sess",
+		TokenHash: "token-expired-hash",
+		ExpiresAt: now.Add(-1 * time.Hour),
+		CreatedAt: now.Add(-2 * time.Hour),
+	}
+	if err := repo.CreateSession(ctx, sessExpired); err != nil {
+		t.Fatalf("CreateSession expired failed: %v", err)
+	}
+
+	// Verify GetSession
+	got, err := repo.GetSession(ctx, "token-active-hash")
+	if err != nil || got.ID != "sess-act" {
+		t.Fatalf("GetSession failed: got %+v, err=%v", got, err)
+	}
+
+	// Clean expired sessions
+	if err := repo.DeleteExpiredSessions(ctx); err != nil {
+		t.Fatalf("DeleteExpiredSessions failed: %v", err)
+	}
+	if _, err := repo.GetSession(ctx, "token-expired-hash"); !errors.Is(err, domain.ErrNotFound) {
+		t.Errorf("expected expired session to be deleted, got %v", err)
+	}
+	if _, err := repo.GetSession(ctx, "token-active-hash"); err != nil {
+		t.Errorf("expected active session to still exist, got %v", err)
+	}
+
+	// Cascade delete when user is deleted
+	if err := repo.DeleteUser(ctx, "u-sess"); err != nil {
+		t.Fatalf("DeleteUser failed: %v", err)
+	}
+	if _, err := repo.GetSession(ctx, "token-active-hash"); !errors.Is(err, domain.ErrNotFound) {
+		t.Errorf("expected active session to be cascade deleted when user deleted, got %v", err)
+	}
+}

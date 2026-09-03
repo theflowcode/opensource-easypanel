@@ -74,6 +74,9 @@ func TestNoOpAdapters(t *testing.T) {
 	if err != nil || len(containers) != 0 {
 		t.Errorf("NoOpDocker.ListContainers failed: %v", err)
 	}
+	if err := d.PruneSystem(ctx); err != nil {
+		t.Errorf("NoOpDocker.PruneSystem failed: %v", err)
+	}
 
 	// Proxy
 	p := noop.NewNoOpProxyDriver()

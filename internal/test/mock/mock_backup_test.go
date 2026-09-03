@@ -76,4 +76,38 @@ func TestMockDockerInfoAndHostMetrics(t *testing.T) {
 	if err != nil || metrics == nil || metrics.MemoryTotalBytes == 0 {
 		t.Errorf("GetHostMetrics failed: %v", err)
 	}
+
+	if err := d.PruneSystem(ctx); err != nil {
+		t.Errorf("PruneSystem failed: %v", err)
+	}
+}
+
+func TestMockSessions(t *testing.T) {
+	ctx := context.Background()
+	db := mock.NewMockDatabasePort()
+
+	now := time.Now().UTC()
+	sess := &domain.Session{
+		ID:        "sess-mock",
+		UserID:    "user-1",
+		TokenHash: "hash-secret-xyz",
+		ExpiresAt: now.Add(2 * time.Hour),
+		CreatedAt: now,
+	}
+
+	if err := db.CreateSession(ctx, sess); err != nil {
+		t.Fatalf("CreateSession failed: %v", err)
+	}
+
+	got, err := db.GetSession(ctx, "hash-secret-xyz")
+	if err != nil || got.ID != "sess-mock" {
+		t.Fatalf("GetSession failed: got %+v, err=%v", got, err)
+	}
+
+	if err := db.DeleteSession(ctx, "sess-mock"); err != nil {
+		t.Fatalf("DeleteSession failed: %v", err)
+	}
+	if _, err := db.GetSession(ctx, "hash-secret-xyz"); err != domain.ErrNotFound {
+		t.Errorf("expected ErrNotFound for deleted session, got %v", err)
+	}
 }
