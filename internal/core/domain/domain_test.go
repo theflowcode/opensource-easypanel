@@ -711,3 +711,67 @@ func TestScreenAuditRefinements(t *testing.T) {
 		t.Errorf("Domain project/service names not preserved: %+v", dom)
 	}
 }
+
+func TestFrontendAuditRefinements(t *testing.T) {
+	// 1. Project Env
+	p := domain.Project{
+		ID:          "p-front",
+		Name:        "frontproject",
+		Description: "project with env",
+		Env:         "KEY1=VAL1\nKEY2=VAL2",
+	}
+	if err := p.Validate(); err != nil {
+		t.Fatalf("Project validation failed: %v", err)
+	}
+	if p.Env != "KEY1=VAL1\nKEY2=VAL2" {
+		t.Errorf("Project Env not preserved: %s", p.Env)
+	}
+
+	// 2. VolumeMount with Content (inline file)
+	vm := domain.VolumeMount{
+		Type:          "file",
+		Name:          "custom-nginx",
+		ContainerPath: "/etc/nginx/nginx.conf",
+		Content:       "events {} http { server { listen 80; } }",
+		ReadOnly:      true,
+	}
+	if vm.Type != "file" || vm.Content == "" {
+		t.Errorf("VolumeMount inline file content not preserved: %+v", vm)
+	}
+
+	// 3. Service Notes and LastError, and ToSpec propagation
+	srv := domain.Service{
+		ID:          "s-front",
+		ProjectID:   "p-front",
+		ProjectName: "frontproject",
+		Name:        "webapp",
+		Type:        domain.ServiceTypeApp,
+		SourceType:  domain.SourceTypeImage,
+		Image:       "nginx:alpine",
+		Notes:       "Production frontend microservice",
+		LastError:   "container exited with code 137 (OOMKilled)",
+	}
+	if err := srv.Validate(); err != nil {
+		t.Fatalf("Service validation failed: %v", err)
+	}
+	spec := srv.ToSpec()
+	if spec.Notes != "Production frontend microservice" || spec.LastError != "container exited with code 137 (OOMKilled)" {
+		t.Errorf("ToSpec did not propagate Notes or LastError: %+v", spec)
+	}
+
+	// 4. RedirectRule with Regex and Replacement
+	rule := domain.RedirectRule{
+		ID:          "r-1",
+		ServiceID:   "s-front",
+		Source:      "api.example.com",
+		Target:      "https://example.com/api",
+		Regex:       "^/api/v1/(.*)",
+		Replacement: "/api/v2/$1",
+		Permanent:   true,
+		Enabled:     true,
+	}
+	if rule.Regex != "^/api/v1/(.*)" || rule.Replacement != "/api/v2/$1" {
+		t.Errorf("RedirectRule Regex/Replacement not preserved: %+v", rule)
+	}
+}
+

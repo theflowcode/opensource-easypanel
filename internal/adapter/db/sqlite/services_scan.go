@@ -37,7 +37,7 @@ func (r *Repository) scanServiceRow(scanner rowScanner) (*domain.Service, error)
 		&sourceType, &sourceCfgJSON, &s.Image, &s.Command, &argsJSON,
 		&envVarsJSON, &portsJSON, &volumesJSON, &domainsJSON, &s.Replicas,
 		&s.Resources.CPULimit, &s.Resources.MemoryLimit, &s.RestartPolicy, &healthJSON, &cronJobsJSON,
-		&dbCfgJSON, &redirectsJSON, &s.PrimaryDomainID, &zdInt, &labelsJSON,
+		&dbCfgJSON, &redirectsJSON, &s.PrimaryDomainID, &zdInt, &s.Notes, &s.LastError, &labelsJSON,
 		&status, &s.CreatedAt, &s.UpdatedAt,
 	)
 	if errors.Is(err, sql.ErrNoRows) {

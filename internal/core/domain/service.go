@@ -32,6 +32,8 @@ type Service struct {
 	Redirects       []RedirectRule     `json:"redirects,omitempty"`
 	PrimaryDomainID string             `json:"primaryDomainId,omitempty"`
 	ZeroDowntime    bool               `json:"zeroDowntime,omitempty"`
+	Notes           string             `json:"notes,omitempty"`
+	LastError       string             `json:"lastError,omitempty"`
 	Labels          map[string]string  `json:"labels,omitempty"`
 	Status          ServiceStatus      `json:"status"`
 	CreatedAt       time.Time          `json:"createdAt"`
@@ -135,6 +137,8 @@ func (s *Service) ToSpec() ServiceSpec {
 		Redirects:       s.Redirects,
 		PrimaryDomainID: s.PrimaryDomainID,
 		ZeroDowntime:    s.ZeroDowntime,
+		Notes:           s.Notes,
+		LastError:       s.LastError,
 		Labels:          labels,
 	}
 }

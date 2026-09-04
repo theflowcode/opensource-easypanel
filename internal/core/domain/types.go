@@ -100,10 +100,11 @@ type PortMapping struct {
 
 // VolumeMount specifies container volume persistence.
 type VolumeMount struct {
-	Type          string `json:"type,omitempty"` // "volume" or "bind"
+	Type          string `json:"type,omitempty"` // "volume", "bind", or "file"
 	Name          string `json:"name"`
 	HostPath      string `json:"hostPath,omitempty"`
 	ContainerPath string `json:"containerPath"`
+	Content       string `json:"content,omitempty"` // Inline file content for type "file"
 	ReadOnly      bool   `json:"readOnly"`
 }
 
@@ -163,6 +164,8 @@ type ServiceSpec struct {
 	Redirects       []RedirectRule     `json:"redirects,omitempty"`
 	PrimaryDomainID string             `json:"primaryDomainId,omitempty"`
 	ZeroDowntime    bool               `json:"zeroDowntime,omitempty"`
+	Notes           string             `json:"notes,omitempty"`
+	LastError       string             `json:"lastError,omitempty"`
 	Labels          map[string]string  `json:"labels,omitempty"`
 }
 

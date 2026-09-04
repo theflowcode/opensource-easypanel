@@ -648,3 +648,85 @@ func TestActionsAndStorageProvidersCRUD(t *testing.T) {
 		t.Errorf("Updated PrimaryDomainID or ZeroDowntime not preserved: %+v, err=%v", gotUpdatedS, err)
 	}
 }
+
+func TestProjectEnvAndServiceNotesError(t *testing.T) {
+	repo := setupTestDB(t)
+	ctx := context.Background()
+
+	// 1. Project with Env
+	p := &domain.Project{
+		ID:          "p-env-1",
+		Name:        "project-with-env",
+		Description: "Project level env testing",
+		Env:         "SHARED_API_KEY=secret123\nNODE_ENV=production",
+	}
+	if err := repo.CreateProject(ctx, p); err != nil {
+		t.Fatalf("CreateProject failed: %v", err)
+	}
+
+	gotP, err := repo.GetProject(ctx, "p-env-1")
+	if err != nil {
+		t.Fatalf("GetProject failed: %v", err)
+	}
+	if gotP.Env != "SHARED_API_KEY=secret123\nNODE_ENV=production" {
+		t.Errorf("GetProject Env not preserved: got %s", gotP.Env)
+	}
+
+	gotByName, err := repo.GetProjectByName(ctx, "project-with-env")
+	if err != nil || gotByName.Env != gotP.Env {
+		t.Errorf("GetProjectByName Env mismatch: %+v, err=%v", gotByName, err)
+	}
+
+	// Update project env
+	gotP.Env = "SHARED_API_KEY=secret456\nNODE_ENV=staging"
+	if err := repo.UpdateProject(ctx, gotP); err != nil {
+		t.Fatalf("UpdateProject failed: %v", err)
+	}
+	gotUpdatedP, err := repo.GetProject(ctx, "p-env-1")
+	if err != nil || gotUpdatedP.Env != "SHARED_API_KEY=secret456\nNODE_ENV=staging" {
+		t.Errorf("Updated Project Env not preserved: %+v, err=%v", gotUpdatedP, err)
+	}
+
+	// 2. Service with Notes and LastError
+	s := &domain.Service{
+		ID:          "s-notes-1",
+		ProjectID:   "p-env-1",
+		ProjectName: "project-with-env",
+		Name:        "web-worker",
+		Type:        domain.ServiceTypeApp,
+		SourceType:  domain.SourceTypeImage,
+		Image:       "node:20-alpine",
+		Notes:       "Background queue processor with Redis connection",
+		LastError:   "error starting container: port 3000 already allocated",
+	}
+	if err := repo.CreateService(ctx, s); err != nil {
+		t.Fatalf("CreateService failed: %v", err)
+	}
+
+	gotS, err := repo.GetService(ctx, "s-notes-1")
+	if err != nil {
+		t.Fatalf("GetService failed: %v", err)
+	}
+	if gotS.Notes != "Background queue processor with Redis connection" {
+		t.Errorf("GetService Notes not preserved: %s", gotS.Notes)
+	}
+	if gotS.LastError != "error starting container: port 3000 already allocated" {
+		t.Errorf("GetService LastError not preserved: %s", gotS.LastError)
+	}
+
+	// Update service notes and lastError
+	gotS.Notes = "Updated: Background queue processor running on port 3001"
+	gotS.LastError = ""
+	if err := repo.UpdateService(ctx, gotS); err != nil {
+		t.Fatalf("UpdateService failed: %v", err)
+	}
+
+	gotUpdatedS, err := repo.GetService(ctx, "s-notes-1")
+	if err != nil {
+		t.Fatalf("GetService after update failed: %v", err)
+	}
+	if gotUpdatedS.Notes != "Updated: Background queue processor running on port 3001" || gotUpdatedS.LastError != "" {
+		t.Errorf("Updated Notes/LastError not preserved: notes=%q, lastError=%q", gotUpdatedS.Notes, gotUpdatedS.LastError)
+	}
+}
+
