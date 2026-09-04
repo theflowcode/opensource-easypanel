@@ -11,6 +11,29 @@ import (
 	"github.com/opensource-easypanel/openpanel/internal/core/domain"
 )
 
+const domainColumns = `id, service_id, project_name, service_name, domain_name, port, path, https, cert_mode, middlewares, status, created_at, updated_at`
+
+func scanDomainRow(scanner rowScanner) (*domain.Domain, error) {
+	var (
+		d        domain.Domain
+		httpsInt int
+		midJSON  string
+	)
+	err := scanner.Scan(
+		&d.ID, &d.ServiceID, &d.ProjectName, &d.ServiceName, &d.DomainName,
+		&d.Port, &d.Path, &httpsInt, &d.CertMode, &midJSON, &d.Status, &d.CreatedAt, &d.UpdatedAt,
+	)
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil, domain.ErrNotFound
+	}
+	if err != nil {
+		return nil, err
+	}
+	d.HTTPS = (httpsInt == 1)
+	_ = json.Unmarshal([]byte(midJSON), &d.Middlewares)
+	return &d, nil
+}
+
 func (r *Repository) CreateDomain(ctx context.Context, d *domain.Domain) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -35,11 +58,12 @@ func (r *Repository) CreateDomain(ctx context.Context, d *domain.Domain) error {
 	midJSON, _ := json.Marshal(d.Middlewares)
 
 	query := `
-		INSERT INTO domains (id, service_id, domain_name, port, path, https, cert_mode, middlewares, status, created_at, updated_at)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+		INSERT INTO domains (
+			id, service_id, project_name, service_name, domain_name, port, path, https, cert_mode, middlewares, status, created_at, updated_at
+		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 	`
 	_, err := r.q.ExecContext(ctx, query,
-		d.ID, d.ServiceID, d.DomainName, d.Port, d.Path, httpsInt, d.CertMode, string(midJSON), d.Status, d.CreatedAt, d.UpdatedAt,
+		d.ID, d.ServiceID, d.ProjectName, d.ServiceName, d.DomainName, d.Port, d.Path, httpsInt, d.CertMode, string(midJSON), d.Status, d.CreatedAt, d.UpdatedAt,
 	)
 	if err != nil {
 		if strings.Contains(err.Error(), "UNIQUE constraint failed") {
@@ -57,31 +81,15 @@ func (r *Repository) GetDomain(ctx context.Context, id string) (*domain.Domain, 
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
-	query := `SELECT id, service_id, domain_name, port, path, https, cert_mode, middlewares, status, created_at, updated_at FROM domains WHERE id = ?`
-	row := r.q.QueryRowContext(ctx, query, id)
-
-	var (
-		d        domain.Domain
-		httpsInt int
-		midJSON  string
-	)
-	err := row.Scan(&d.ID, &d.ServiceID, &d.DomainName, &d.Port, &d.Path, &httpsInt, &d.CertMode, &midJSON, &d.Status, &d.CreatedAt, &d.UpdatedAt)
-	if errors.Is(err, sql.ErrNoRows) {
-		return nil, domain.ErrNotFound
-	}
-	if err != nil {
-		return nil, err
-	}
-	d.HTTPS = (httpsInt == 1)
-	_ = json.Unmarshal([]byte(midJSON), &d.Middlewares)
-	return &d, nil
+	query := `SELECT ` + domainColumns + ` FROM domains WHERE id = ?`
+	return scanDomainRow(r.q.QueryRowContext(ctx, query, id))
 }
 
 func (r *Repository) ListDomainsByService(ctx context.Context, serviceID string) ([]*domain.Domain, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
-	query := `SELECT id, service_id, domain_name, port, path, https, cert_mode, middlewares, status, created_at, updated_at FROM domains WHERE service_id = ? ORDER BY created_at ASC`
+	query := `SELECT ` + domainColumns + ` FROM domains WHERE service_id = ? ORDER BY created_at ASC`
 	rows, err := r.q.QueryContext(ctx, query, serviceID)
 	if err != nil {
 		return nil, err
@@ -90,17 +98,11 @@ func (r *Repository) ListDomainsByService(ctx context.Context, serviceID string)
 
 	var domains []*domain.Domain
 	for rows.Next() {
-		var (
-			d        domain.Domain
-			httpsInt int
-			midJSON  string
-		)
-		if err := rows.Scan(&d.ID, &d.ServiceID, &d.DomainName, &d.Port, &d.Path, &httpsInt, &d.CertMode, &midJSON, &d.Status, &d.CreatedAt, &d.UpdatedAt); err != nil {
+		d, err := scanDomainRow(rows)
+		if err != nil {
 			return nil, err
 		}
-		d.HTTPS = (httpsInt == 1)
-		_ = json.Unmarshal([]byte(midJSON), &d.Middlewares)
-		domains = append(domains, &d)
+		domains = append(domains, d)
 	}
 	return domains, rows.Err()
 }
@@ -109,7 +111,7 @@ func (r *Repository) ListAllDomains(ctx context.Context) ([]*domain.Domain, erro
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
-	query := `SELECT id, service_id, domain_name, port, path, https, cert_mode, middlewares, status, created_at, updated_at FROM domains ORDER BY created_at ASC`
+	query := `SELECT ` + domainColumns + ` FROM domains ORDER BY created_at ASC`
 	rows, err := r.q.QueryContext(ctx, query)
 	if err != nil {
 		return nil, err
@@ -118,17 +120,11 @@ func (r *Repository) ListAllDomains(ctx context.Context) ([]*domain.Domain, erro
 
 	var domains []*domain.Domain
 	for rows.Next() {
-		var (
-			d        domain.Domain
-			httpsInt int
-			midJSON  string
-		)
-		if err := rows.Scan(&d.ID, &d.ServiceID, &d.DomainName, &d.Port, &d.Path, &httpsInt, &d.CertMode, &midJSON, &d.Status, &d.CreatedAt, &d.UpdatedAt); err != nil {
+		d, err := scanDomainRow(rows)
+		if err != nil {
 			return nil, err
 		}
-		d.HTTPS = (httpsInt == 1)
-		_ = json.Unmarshal([]byte(midJSON), &d.Middlewares)
-		domains = append(domains, &d)
+		domains = append(domains, d)
 	}
 	return domains, rows.Err()
 }

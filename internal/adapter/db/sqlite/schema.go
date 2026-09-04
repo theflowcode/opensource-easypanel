@@ -214,6 +214,14 @@ CREATE TABLE IF NOT EXISTS storage_providers (
 );
 `,
 	},
+	{
+		version: 7,
+		name:    "add_domain_project_and_service_names",
+		sql: `
+ALTER TABLE domains ADD COLUMN project_name TEXT NOT NULL DEFAULT '';
+ALTER TABLE domains ADD COLUMN service_name TEXT NOT NULL DEFAULT '';
+`,
+	},
 }
 
 func runMigrations(ctx context.Context, q queryer) error {

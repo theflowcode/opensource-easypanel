@@ -462,10 +462,12 @@ func TestAdvancedServiceAndDomainFields(t *testing.T) {
 		t.Errorf("Updated Redirects not preserved: %+v", gotUpdated.Redirects)
 	}
 
-	// Test Domain with Middlewares
+	// Test Domain with Middlewares, ProjectName, and ServiceName
 	dom := &domain.Domain{
 		ID:          "d-adv",
 		ServiceID:   "s-adv",
+		ProjectName: "adv-project",
+		ServiceName: "adv-web",
 		DomainName:  "adv.example.com",
 		Port:        8080,
 		HTTPS:       true,
@@ -478,6 +480,9 @@ func TestAdvancedServiceAndDomainFields(t *testing.T) {
 	gotDom, err := repo.GetDomain(ctx, "d-adv")
 	if err != nil {
 		t.Fatalf("GetDomain failed: %v", err)
+	}
+	if gotDom.ProjectName != "adv-project" || gotDom.ServiceName != "adv-web" {
+		t.Errorf("Domain ProjectName or ServiceName not preserved: %+v", gotDom)
 	}
 	if len(gotDom.Middlewares) != 2 || gotDom.Middlewares[0] != "rate-limit" {
 		t.Errorf("Middlewares not preserved: %+v", gotDom.Middlewares)

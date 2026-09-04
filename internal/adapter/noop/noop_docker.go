@@ -101,6 +101,22 @@ func (n *NoOpDocker) ExecServiceTerminal(ctx context.Context, serviceID string, 
 	return nil
 }
 
+func (n *NoOpDocker) StreamDockerEvents(ctx context.Context, eventChan chan<- domain.DockerEvent) error {
+	return nil
+}
+
+func (n *NoOpDocker) GetServiceStorage(ctx context.Context, projectName, serviceName string) (*domain.ServiceStorage, error) {
+	return &domain.ServiceStorage{
+		ProjectName: projectName,
+		ServiceName: serviceName,
+		Path:        "/etc/easypanel/projects/" + projectName + "/" + serviceName,
+	}, nil
+}
+
+func (n *NoOpDocker) ListStorageUsage(ctx context.Context) ([]domain.ServiceStorage, error) {
+	return []domain.ServiceStorage{}, nil
+}
+
 func (n *NoOpDocker) EnsureNetwork(ctx context.Context, networkName string) error {
 	return nil
 }

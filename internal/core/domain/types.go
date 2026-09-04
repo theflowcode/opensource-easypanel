@@ -193,6 +193,8 @@ type RegistryAuth struct {
 // ServiceStats snapshot of real-time container resource telemetry.
 type ServiceStats struct {
 	ServiceID          string    `json:"serviceId"`
+	ProjectName        string    `json:"projectName,omitempty"`
+	ServiceName        string    `json:"serviceName,omitempty"`
 	CPUPercentage      float64   `json:"cpuPercentage"`
 	MemoryUsageBytes   uint64    `json:"memoryUsageBytes"`
 	MemoryLimitBytes   uint64    `json:"memoryLimitBytes"`

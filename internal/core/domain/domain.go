@@ -9,6 +9,8 @@ import (
 type Domain struct {
 	ID          string    `json:"id"`
 	ServiceID   string    `json:"serviceId"`
+	ProjectName string    `json:"projectName,omitempty"`
+	ServiceName string    `json:"serviceName,omitempty"`
 	DomainName  string    `json:"domainName"`
 	Port        int       `json:"port"`
 	Path        string    `json:"path,omitempty"`

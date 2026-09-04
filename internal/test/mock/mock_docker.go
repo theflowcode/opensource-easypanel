@@ -28,7 +28,10 @@ type MockDockerPort struct {
 	GetServiceStatusFunc    func(ctx context.Context, serviceID string) (*domain.ServiceStatus, error)
 	GetServiceStatsFunc     func(ctx context.Context, serviceID string) (*domain.ServiceStats, error)
 	StreamServiceLogsFunc   func(ctx context.Context, serviceID string, opts domain.LogStreamOptions, stdout, stderr io.Writer) error
+	StreamDockerEventsFunc  func(ctx context.Context, eventChan chan<- domain.DockerEvent) error
 	ExecServiceTerminalFunc func(ctx context.Context, serviceID string, stdin io.Reader, stdout, stderr io.Writer, resizeChan <-chan domain.TerminalSize) error
+	GetServiceStorageFunc   func(ctx context.Context, projectName, serviceName string) (*domain.ServiceStorage, error)
+	ListStorageUsageFunc    func(ctx context.Context) ([]domain.ServiceStorage, error)
 	EnsureNetworkFunc       func(ctx context.Context, networkName string) error
 	EnsureVolumeFunc        func(ctx context.Context, volumeName string) error
 	ListContainersFunc      func(ctx context.Context) ([]domain.ContainerSummary, error)
@@ -41,6 +44,7 @@ type MockDockerPort struct {
 	DeployedServices map[string]domain.ServiceSpec
 	Networks         map[string]bool
 	Volumes          map[string]bool
+	Storage          map[string]*domain.ServiceStorage
 }
 
 func NewMockDockerPort() *MockDockerPort {
@@ -48,6 +52,7 @@ func NewMockDockerPort() *MockDockerPort {
 		DeployedServices: make(map[string]domain.ServiceSpec),
 		Networks:         make(map[string]bool),
 		Volumes:          make(map[string]bool),
+		Storage:          make(map[string]*domain.ServiceStorage),
 	}
 }
 
@@ -58,6 +63,7 @@ func (m *MockDockerPort) Reset() {
 	m.DeployedServices = make(map[string]domain.ServiceSpec)
 	m.Networks = make(map[string]bool)
 	m.Volumes = make(map[string]bool)
+	m.Storage = make(map[string]*domain.ServiceStorage)
 	m.Calls = nil
 	m.DeployServiceFunc = nil
 	m.StopServiceFunc = nil

@@ -25,7 +25,12 @@ type DockerPort interface {
 	GetServiceStatus(ctx context.Context, serviceID string) (*domain.ServiceStatus, error)
 	GetServiceStats(ctx context.Context, serviceID string) (*domain.ServiceStats, error)
 	StreamServiceLogs(ctx context.Context, serviceID string, opts domain.LogStreamOptions, stdout, stderr io.Writer) error
+	StreamDockerEvents(ctx context.Context, eventChan chan<- domain.DockerEvent) error
 	ExecServiceTerminal(ctx context.Context, serviceID string, stdin io.Reader, stdout, stderr io.Writer, resizeChan <-chan domain.TerminalSize) error
+
+	// Storage & Disk Usage
+	GetServiceStorage(ctx context.Context, projectName, serviceName string) (*domain.ServiceStorage, error)
+	ListStorageUsage(ctx context.Context) ([]domain.ServiceStorage, error)
 
 	// Infrastructure Management & Maintenance
 	EnsureNetwork(ctx context.Context, networkName string) error

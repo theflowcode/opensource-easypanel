@@ -68,3 +68,43 @@ func (m *MockDockerPort) PruneSystem(ctx context.Context) error {
 	}
 	return nil
 }
+
+func (m *MockDockerPort) StreamDockerEvents(ctx context.Context, eventChan chan<- domain.DockerEvent) error {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	if m.StreamDockerEventsFunc != nil {
+		return m.StreamDockerEventsFunc(ctx, eventChan)
+	}
+	return nil
+}
+
+func (m *MockDockerPort) GetServiceStorage(ctx context.Context, projectName, serviceName string) (*domain.ServiceStorage, error) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	if m.GetServiceStorageFunc != nil {
+		return m.GetServiceStorageFunc(ctx, projectName, serviceName)
+	}
+	key := projectName + "/" + serviceName
+	if s, exists := m.Storage[key]; exists {
+		return s, nil
+	}
+	return &domain.ServiceStorage{
+		ProjectName: projectName,
+		ServiceName: serviceName,
+		SizeBytes:   1024 * 1024,
+		Path:        "/etc/easypanel/projects/" + projectName + "/" + serviceName,
+	}, nil
+}
+
+func (m *MockDockerPort) ListStorageUsage(ctx context.Context) ([]domain.ServiceStorage, error) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	if m.ListStorageUsageFunc != nil {
+		return m.ListStorageUsageFunc(ctx)
+	}
+	var list []domain.ServiceStorage
+	for _, s := range m.Storage {
+		list = append(list, *s)
+	}
+	return list, nil
+}

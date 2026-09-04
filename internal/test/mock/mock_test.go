@@ -364,3 +364,54 @@ func TestMockActionsAndStorageProviders(t *testing.T) {
 		t.Error("Reset() did not clear Actions or StorageProviders")
 	}
 }
+
+func TestMockDockerStorageAndEvents(t *testing.T) {
+	docker := mock.NewMockDockerPort()
+	ctx := context.Background()
+
+	// 1. GetServiceStorage default
+	storage, err := docker.GetServiceStorage(ctx, "myfirstproject", "chatwoot-db")
+	if err != nil || storage.ProjectName != "myfirstproject" || storage.ServiceName != "chatwoot-db" {
+		t.Fatalf("GetServiceStorage failed: %+v, err=%v", storage, err)
+	}
+
+	// 2. Custom storage entry
+	docker.Storage["myfirstproject/chatwoot-db"] = &domain.ServiceStorage{
+		ProjectName: "myfirstproject",
+		ServiceName: "chatwoot-db",
+		SizeBytes:   74 * 1024 * 1024,
+		Path:        "/etc/easypanel/projects/myfirstproject/chatwoot-db",
+	}
+	customStorage, err := docker.GetServiceStorage(ctx, "myfirstproject", "chatwoot-db")
+	if err != nil || customStorage.SizeBytes != 74*1024*1024 {
+		t.Fatalf("custom GetServiceStorage failed: %+v, err=%v", customStorage, err)
+	}
+
+	list, err := docker.ListStorageUsage(ctx)
+	if err != nil || len(list) != 1 {
+		t.Fatalf("ListStorageUsage failed: len=%d, err=%v", len(list), err)
+	}
+
+	// 3. StreamDockerEvents
+	ch := make(chan domain.DockerEvent, 1)
+	docker.StreamDockerEventsFunc = func(ctx context.Context, eventChan chan<- domain.DockerEvent) error {
+		eventChan <- domain.DockerEvent{
+			Type:   "container",
+			Action: "start",
+			Actor:  "myfirstproject_chatwoot.1",
+		}
+		return nil
+	}
+	if err := docker.StreamDockerEvents(ctx, ch); err != nil {
+		t.Fatalf("StreamDockerEvents failed: %v", err)
+	}
+	ev := <-ch
+	if ev.Actor != "myfirstproject_chatwoot.1" || ev.Action != "start" {
+		t.Errorf("unexpected event received: %+v", ev)
+	}
+
+	docker.Reset()
+	if len(docker.Storage) != 0 {
+		t.Error("Reset() did not clear Storage")
+	}
+}

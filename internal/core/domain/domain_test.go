@@ -640,3 +640,74 @@ func TestActionsStorageProvidersAndMacros(t *testing.T) {
 		t.Errorf("ToSpec did not propagate PrimaryDomainID or ZeroDowntime: %+v", spec)
 	}
 }
+
+func TestScreenAuditRefinements(t *testing.T) {
+	// 1. HostMetrics
+	hm := domain.HostMetrics{
+		CPUPercent:            2.5,
+		CPUCores:              12,
+		LoadAvg:               [3]float64{1.62, 0.75, 0.67},
+		MemoryUsedBytes:       8 * 1024 * 1024 * 1024,
+		MemoryTotalBytes:      16 * 1024 * 1024 * 1024,
+		DiskUsedBytes:         40 * 1024 * 1024 * 1024,
+		DiskTotalBytes:        80 * 1024 * 1024 * 1024,
+		NetworkInBytesPerSec:  1024,
+		NetworkOutBytesPerSec: 2048,
+	}
+	if hm.CPUCores != 12 || hm.LoadAvg[0] != 1.62 || hm.NetworkInBytesPerSec != 1024 {
+		t.Errorf("HostMetrics values not preserved: %+v", hm)
+	}
+
+	// 2. ServiceStats with ProjectName & ServiceName
+	stats := domain.ServiceStats{
+		ServiceID:          "s-1",
+		ProjectName:        "myfirstproject",
+		ServiceName:        "chatwoot",
+		CPUPercentage:      1.2,
+		MemoryUsageBytes:   250 * 1024 * 1024,
+		NetworkInputBytes:  1000,
+		NetworkOutputBytes: 2000,
+	}
+	if stats.ProjectName != "myfirstproject" || stats.ServiceName != "chatwoot" {
+		t.Errorf("ServiceStats project/service names not preserved: %+v", stats)
+	}
+
+	// 3. ServiceStorage
+	storage := domain.ServiceStorage{
+		ProjectName: "myfirstproject",
+		ServiceName: "chatwoot-db",
+		SizeBytes:   74 * 1024 * 1024,
+		Path:        "/etc/easypanel/projects/myfirstproject/chatwoot-db",
+	}
+	if storage.ProjectName != "myfirstproject" || storage.SizeBytes != 74*1024*1024 {
+		t.Errorf("ServiceStorage values not preserved: %+v", storage)
+	}
+
+	// 4. DockerEvent
+	ev := domain.DockerEvent{
+		Type:   "container",
+		Action: "die",
+		Actor:  "myfirstproject_chatwoot.1",
+		Time:   time.Now().UTC(),
+	}
+	if ev.Type != "container" || ev.Action != "die" {
+		t.Errorf("DockerEvent values not preserved: %+v", ev)
+	}
+
+	// 5. Domain with ProjectName and ServiceName
+	dom := domain.Domain{
+		ID:          "d-audit",
+		ServiceID:   "s-1",
+		ProjectName: "myfirstproject",
+		ServiceName: "chatwoot",
+		DomainName:  "chatwoot.example.com",
+		Port:        3000,
+		HTTPS:       true,
+	}
+	if err := dom.Validate(); err != nil {
+		t.Fatalf("domain validation failed: %v", err)
+	}
+	if dom.ProjectName != "myfirstproject" || dom.ServiceName != "chatwoot" {
+		t.Errorf("Domain project/service names not preserved: %+v", dom)
+	}
+}
