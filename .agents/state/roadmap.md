@@ -62,12 +62,12 @@ Build an open-source, production-ready, ultra-low resource footprint PaaS contro
 ### Phase 2: Parallel Workstreams Execution (Concurrent & Independent)
 *Once Phase 1 is locked, all workstreams below can be worked on in parallel by independent subagents/developers without merge conflicts or cross-blocking.*
 
-#### Workstream 2A: Docker Engine & Swarm Adapter
-- [ ] Location: `internal/adapter/docker/`
-- [ ] Implement `port.DockerPort` using official `github.com/docker/docker/client`
-- [ ] Implement service deployment, replica scaling, stop, restart, teardown
-- [ ] Implement network bridging (`easypanel` overlay/bridge) and volume mount management
-- [ ] Isolated table-driven unit tests against mock daemon / unit harness
+#### Workstream 2A: Docker Engine & Swarm Adapter [COMPLETED]
+- [x] Location: `internal/adapter/docker/`
+- [x] Implement `port.DockerPort` using official `github.com/docker/docker/client`
+- [x] Implement service deployment, replica scaling, stop, restart, teardown
+- [x] Implement network bridging (`easypanel` overlay/bridge) and volume mount management
+- [x] Isolated table-driven unit tests against mock daemon / unit harness and live daemon
 
 #### Workstream 2B: Traefik Dynamic Reverse Proxy Driver
 - [ ] Location: `internal/adapter/proxy/traefik/`
