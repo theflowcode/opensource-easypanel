@@ -39,3 +39,39 @@ func (b *Backup) Validate() error {
 	}
 	return nil
 }
+
+// BackupSchedule represents a recurring cron backup policy for a database or volume.
+type BackupSchedule struct {
+	ID                  string    `json:"id"`
+	ProjectName         string    `json:"projectName"`
+	ServiceName         string    `json:"serviceName"`
+	Type                string    `json:"type"` // "database" or "volume"
+	TargetName          string    `json:"targetName"` // database name or volume name
+	Schedule            string    `json:"schedule"` // cron expression e.g. "0 2 * * *"
+	Enabled             bool      `json:"enabled"`
+	StorageProviderID   string    `json:"storageProviderId"`
+	StorageProviderPath string    `json:"storageProviderPath"`
+	Retention           int       `json:"retention,omitempty"` // retention count (for databases)
+	CreatedAt           time.Time `json:"createdAt"`
+	UpdatedAt           time.Time `json:"updatedAt"`
+}
+
+// Validate ensures required backup schedule fields are present.
+func (bs *BackupSchedule) Validate() error {
+	if strings.TrimSpace(bs.ID) == "" {
+		return ErrValidation
+	}
+	if strings.TrimSpace(bs.ProjectName) == "" || strings.TrimSpace(bs.ServiceName) == "" {
+		return ErrValidation
+	}
+	if strings.TrimSpace(bs.Schedule) == "" {
+		return ErrValidation
+	}
+	if strings.TrimSpace(bs.StorageProviderID) == "" {
+		return ErrValidation
+	}
+	if bs.Type == "" {
+		bs.Type = "database"
+	}
+	return nil
+}

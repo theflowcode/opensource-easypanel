@@ -27,11 +27,13 @@ func (r *Repository) CreateStorageProvider(ctx context.Context, sp *domain.Stora
 
 	query := `
 		INSERT INTO storage_providers (
-			id, name, type, path, endpoint, bucket, region, access_key, secret_key, created_at, updated_at
-		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+			id, name, type, subtype, path, endpoint, bucket, region, access_key, secret_key,
+			host, port, username, password, storage_class, refresh_token, created_at, updated_at
+		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 	`
 	_, err := r.q.ExecContext(ctx, query,
-		sp.ID, sp.Name, sp.Type, sp.Path, sp.Endpoint, sp.Bucket, sp.Region, sp.AccessKey, sp.SecretKey,
+		sp.ID, sp.Name, sp.Type, sp.Subtype, sp.Path, sp.Endpoint, sp.Bucket, sp.Region, sp.AccessKey, sp.SecretKey,
+		sp.Host, sp.Port, sp.Username, sp.Password, sp.StorageClass, sp.RefreshToken,
 		sp.CreatedAt, sp.UpdatedAt,
 	)
 	return err
@@ -42,12 +44,14 @@ func (r *Repository) GetStorageProvider(ctx context.Context, id string) (*domain
 	defer r.mu.RUnlock()
 
 	query := `
-		SELECT id, name, type, path, endpoint, bucket, region, access_key, secret_key, created_at, updated_at
+		SELECT id, name, type, subtype, path, endpoint, bucket, region, access_key, secret_key,
+		       host, port, username, password, storage_class, refresh_token, created_at, updated_at
 		FROM storage_providers WHERE id = ?
 	`
 	var sp domain.StorageProvider
 	err := r.q.QueryRowContext(ctx, query, id).Scan(
-		&sp.ID, &sp.Name, &sp.Type, &sp.Path, &sp.Endpoint, &sp.Bucket, &sp.Region, &sp.AccessKey, &sp.SecretKey,
+		&sp.ID, &sp.Name, &sp.Type, &sp.Subtype, &sp.Path, &sp.Endpoint, &sp.Bucket, &sp.Region, &sp.AccessKey, &sp.SecretKey,
+		&sp.Host, &sp.Port, &sp.Username, &sp.Password, &sp.StorageClass, &sp.RefreshToken,
 		&sp.CreatedAt, &sp.UpdatedAt,
 	)
 	if errors.Is(err, sql.ErrNoRows) {
@@ -64,7 +68,8 @@ func (r *Repository) ListStorageProviders(ctx context.Context) ([]*domain.Storag
 	defer r.mu.RUnlock()
 
 	query := `
-		SELECT id, name, type, path, endpoint, bucket, region, access_key, secret_key, created_at, updated_at
+		SELECT id, name, type, subtype, path, endpoint, bucket, region, access_key, secret_key,
+		       host, port, username, password, storage_class, refresh_token, created_at, updated_at
 		FROM storage_providers ORDER BY name ASC
 	`
 	rows, err := r.q.QueryContext(ctx, query)
@@ -77,7 +82,8 @@ func (r *Repository) ListStorageProviders(ctx context.Context) ([]*domain.Storag
 	for rows.Next() {
 		var sp domain.StorageProvider
 		if err := rows.Scan(
-			&sp.ID, &sp.Name, &sp.Type, &sp.Path, &sp.Endpoint, &sp.Bucket, &sp.Region, &sp.AccessKey, &sp.SecretKey,
+			&sp.ID, &sp.Name, &sp.Type, &sp.Subtype, &sp.Path, &sp.Endpoint, &sp.Bucket, &sp.Region, &sp.AccessKey, &sp.SecretKey,
+			&sp.Host, &sp.Port, &sp.Username, &sp.Password, &sp.StorageClass, &sp.RefreshToken,
 			&sp.CreatedAt, &sp.UpdatedAt,
 		); err != nil {
 			return nil, err

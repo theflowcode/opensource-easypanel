@@ -8,8 +8,8 @@
 /bin/
 /dist/
 /build/
-openpanel
-openpanel-*
+/openpanel
+/openpanel-*
 *.exe
 *.exe~
 *.dll

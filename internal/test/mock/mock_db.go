@@ -34,6 +34,12 @@ type MockDatabasePort struct {
 	Actions map[string]*domain.Action
 	// Storage Providers
 	StorageProviders map[string]*domain.StorageProvider
+	// Backup Schedules
+	BackupSchedules map[string]*domain.BackupSchedule
+	// Middlewares
+	Middlewares map[string]*domain.Middleware
+	// Notification Channels
+	NotificationChannels map[string]*domain.NotificationChannel
 
 	// Call tracking
 	Calls []string
@@ -45,16 +51,19 @@ type MockDatabasePort struct {
 
 func NewMockDatabasePort() *MockDatabasePort {
 	return &MockDatabasePort{
-		Projects:         make(map[string]*domain.Project),
-		Services:         make(map[string]*domain.Service),
-		Domains:          make(map[string]*domain.Domain),
-		Deployments:      make(map[string]*domain.Deployment),
-		Backups:          make(map[string]*domain.Backup),
-		Sessions:         make(map[string]*domain.Session),
-		Users:            make(map[string]*domain.User),
-		Settings:         make(map[string]string),
-		Actions:          make(map[string]*domain.Action),
-		StorageProviders: make(map[string]*domain.StorageProvider),
+		Projects:             make(map[string]*domain.Project),
+		Services:             make(map[string]*domain.Service),
+		Domains:              make(map[string]*domain.Domain),
+		Deployments:          make(map[string]*domain.Deployment),
+		Backups:              make(map[string]*domain.Backup),
+		Sessions:             make(map[string]*domain.Session),
+		Users:                make(map[string]*domain.User),
+		Settings:             make(map[string]string),
+		Actions:              make(map[string]*domain.Action),
+		StorageProviders:     make(map[string]*domain.StorageProvider),
+		BackupSchedules:      make(map[string]*domain.BackupSchedule),
+		Middlewares:          make(map[string]*domain.Middleware),
+		NotificationChannels: make(map[string]*domain.NotificationChannel),
 	}
 }
 
@@ -101,6 +110,9 @@ func (m *MockDatabasePort) Reset() {
 	m.Settings = make(map[string]string)
 	m.Actions = make(map[string]*domain.Action)
 	m.StorageProviders = make(map[string]*domain.StorageProvider)
+	m.BackupSchedules = make(map[string]*domain.BackupSchedule)
+	m.Middlewares = make(map[string]*domain.Middleware)
+	m.NotificationChannels = make(map[string]*domain.NotificationChannel)
 	m.Calls = nil
 	m.MigrateFunc = nil
 	m.CloseFunc = nil

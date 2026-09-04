@@ -1,5 +1,10 @@
 package domain
 
+import (
+	"strings"
+	"time"
+)
+
 // RouteConfig specifies reverse proxy routing for Traefik.
 type RouteConfig struct {
 	ServiceID      string   `json:"serviceId"`
@@ -22,4 +27,28 @@ type RedirectRule struct {
 	Replacement string `json:"replacement,omitempty"` // Replacement target e.g. "/new/$1"
 	Permanent   bool   `json:"permanent"`            // true = 301 Moved Permanently, false = 302 Found
 	Enabled     bool   `json:"enabled"`
+}
+
+// Middleware represents a reusable Traefik HTTP middleware definition (e.g. basicAuth, ipAllowList, rateLimit).
+type Middleware struct {
+	ID        string                 `json:"id"`
+	Name      string                 `json:"name"`
+	Type      string                 `json:"type"` // "basicAuth", "ipAllowList", "forwardAuth", "rateLimit", etc.
+	Config    map[string]interface{} `json:"config,omitempty"`
+	CreatedAt time.Time              `json:"createdAt"`
+	UpdatedAt time.Time              `json:"updatedAt"`
+}
+
+// Validate ensures required middleware fields are present.
+func (m *Middleware) Validate() error {
+	if strings.TrimSpace(m.ID) == "" {
+		return ErrValidation
+	}
+	if strings.TrimSpace(m.Name) == "" {
+		return ErrValidation
+	}
+	if strings.TrimSpace(m.Type) == "" {
+		return ErrValidation
+	}
+	return nil
 }

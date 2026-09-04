@@ -129,6 +129,52 @@ func (r *Repository) ListAllDomains(ctx context.Context) ([]*domain.Domain, erro
 	return domains, rows.Err()
 }
 
+func (r *Repository) UpdateDomain(ctx context.Context, d *domain.Domain) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	if err := d.Validate(); err != nil {
+		return err
+	}
+
+	d.UpdatedAt = time.Now().UTC()
+	httpsInt := 0
+	if d.HTTPS {
+		httpsInt = 1
+	}
+	midJSON, _ := json.Marshal(d.Middlewares)
+
+	query := `
+		UPDATE domains SET
+			domain_name = ?,
+			port = ?,
+			path = ?,
+			https = ?,
+			cert_mode = ?,
+			middlewares = ?,
+			status = ?,
+			updated_at = ?
+		WHERE id = ?
+	`
+	res, err := r.q.ExecContext(ctx, query,
+		d.DomainName, d.Port, d.Path, httpsInt, d.CertMode, string(midJSON), d.Status, d.UpdatedAt, d.ID,
+	)
+	if err != nil {
+		if strings.Contains(err.Error(), "UNIQUE constraint failed") {
+			return domain.ErrAlreadyExists
+		}
+		return err
+	}
+	rows, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rows == 0 {
+		return domain.ErrNotFound
+	}
+	return nil
+}
+
 func (r *Repository) DeleteDomain(ctx context.Context, id string) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()

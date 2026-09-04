@@ -39,3 +39,14 @@ type TemplateServiceSpec struct {
 	EnvVars   []EnvVar       `json:"envVars,omitempty"`
 	Resources ResourceLimits `json:"resources"`
 }
+
+// TemplateServiceEntry models a single service definition in a template creation payload (/createFromSchema).
+type TemplateServiceEntry struct {
+	Type ServiceType            `json:"type"` // "app", "postgres", "mysql", "mariadb", "mongo", "redis", "compose"
+	Data map[string]interface{} `json:"data"`
+}
+
+// TemplateSchema models the multi-service blueprint sent to POST /createFromSchema.
+type TemplateSchema struct {
+	Services []TemplateServiceEntry `json:"services"`
+}

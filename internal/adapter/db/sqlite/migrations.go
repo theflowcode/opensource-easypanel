@@ -218,4 +218,56 @@ ALTER TABLE services ADD COLUMN notes TEXT NOT NULL DEFAULT '';
 ALTER TABLE services ADD COLUMN last_error TEXT NOT NULL DEFAULT '';
 `,
 	},
+	{
+		version: 9,
+		name:    "add_backup_schedules_middlewares_and_storage_provider_fields",
+		sql: `
+CREATE TABLE IF NOT EXISTS backup_schedules (
+    id TEXT PRIMARY KEY,
+    project_name TEXT NOT NULL,
+    service_name TEXT NOT NULL,
+    type TEXT NOT NULL DEFAULT 'database',
+    target_name TEXT NOT NULL DEFAULT '',
+    schedule TEXT NOT NULL,
+    enabled INTEGER NOT NULL DEFAULT 1,
+    storage_provider_id TEXT NOT NULL,
+    storage_provider_path TEXT NOT NULL DEFAULT '',
+    retention INTEGER NOT NULL DEFAULT 0,
+    created_at DATETIME NOT NULL,
+    updated_at DATETIME NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_backup_schedules_service ON backup_schedules (project_name, service_name);
+
+CREATE TABLE IF NOT EXISTS middlewares (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL UNIQUE,
+    type TEXT NOT NULL,
+    config TEXT NOT NULL DEFAULT '{}',
+    created_at DATETIME NOT NULL,
+    updated_at DATETIME NOT NULL
+);
+
+ALTER TABLE storage_providers ADD COLUMN subtype TEXT NOT NULL DEFAULT '';
+ALTER TABLE storage_providers ADD COLUMN host TEXT NOT NULL DEFAULT '';
+ALTER TABLE storage_providers ADD COLUMN port INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE storage_providers ADD COLUMN username TEXT NOT NULL DEFAULT '';
+ALTER TABLE storage_providers ADD COLUMN password TEXT NOT NULL DEFAULT '';
+ALTER TABLE storage_providers ADD COLUMN storage_class TEXT NOT NULL DEFAULT '';
+ALTER TABLE storage_providers ADD COLUMN refresh_token TEXT NOT NULL DEFAULT '';
+`,
+	},
+	{
+		version: 10,
+		name:    "add_notification_channels",
+		sql: `
+CREATE TABLE IF NOT EXISTS notification_channels (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    target TEXT NOT NULL DEFAULT '{}',
+    events TEXT NOT NULL DEFAULT '{}',
+    created_at DATETIME NOT NULL,
+    updated_at DATETIME NOT NULL
+);
+`,
+	},
 }

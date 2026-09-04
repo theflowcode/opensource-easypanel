@@ -36,6 +36,7 @@ type DatabasePort interface {
 	GetDomain(ctx context.Context, id string) (*domain.Domain, error)
 	ListDomainsByService(ctx context.Context, serviceID string) ([]*domain.Domain, error)
 	ListAllDomains(ctx context.Context) ([]*domain.Domain, error)
+	UpdateDomain(ctx context.Context, dom *domain.Domain) error
 	DeleteDomain(ctx context.Context, id string) error
 
 	// Deployments
@@ -80,4 +81,25 @@ type DatabasePort interface {
 	GetStorageProvider(ctx context.Context, id string) (*domain.StorageProvider, error)
 	ListStorageProviders(ctx context.Context) ([]*domain.StorageProvider, error)
 	DeleteStorageProvider(ctx context.Context, id string) error
+
+	// Backup Schedules (Recurring Policies)
+	CreateBackupSchedule(ctx context.Context, bs *domain.BackupSchedule) error
+	GetBackupSchedule(ctx context.Context, id string) (*domain.BackupSchedule, error)
+	ListBackupSchedulesByService(ctx context.Context, projectName, serviceName string) ([]*domain.BackupSchedule, error)
+	UpdateBackupSchedule(ctx context.Context, bs *domain.BackupSchedule) error
+	DeleteBackupSchedule(ctx context.Context, id string) error
+
+	// Middlewares (Traefik Proxy Rules)
+	CreateMiddleware(ctx context.Context, mw *domain.Middleware) error
+	GetMiddleware(ctx context.Context, id string) (*domain.Middleware, error)
+	ListMiddlewares(ctx context.Context) ([]*domain.Middleware, error)
+	UpdateMiddleware(ctx context.Context, mw *domain.Middleware) error
+	DeleteMiddleware(ctx context.Context, id string) error
+
+	// Notification Channels (Alert Destinations)
+	CreateNotificationChannel(ctx context.Context, ch *domain.NotificationChannel) error
+	GetNotificationChannel(ctx context.Context, id string) (*domain.NotificationChannel, error)
+	ListNotificationChannels(ctx context.Context) ([]*domain.NotificationChannel, error)
+	UpdateNotificationChannel(ctx context.Context, ch *domain.NotificationChannel) error
+	DeleteNotificationChannel(ctx context.Context, id string) error
 }

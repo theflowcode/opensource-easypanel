@@ -79,6 +79,30 @@ func (m *MockDatabasePort) ListAllDomains(ctx context.Context) ([]*domain.Domain
 	return list, nil
 }
 
+func (m *MockDatabasePort) UpdateDomain(ctx context.Context, d *domain.Domain) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.Calls = append(m.Calls, "UpdateDomain")
+
+	if err := d.Validate(); err != nil {
+		return err
+	}
+	existing, ok := m.Domains[d.ID]
+	if !ok {
+		return domain.ErrNotFound
+	}
+	for id, other := range m.Domains {
+		if id != d.ID && other.DomainName == d.DomainName {
+			return domain.ErrAlreadyExists
+		}
+	}
+	clone := *d
+	clone.CreatedAt = existing.CreatedAt
+	clone.UpdatedAt = time.Now().UTC()
+	m.Domains[d.ID] = &clone
+	return nil
+}
+
 func (m *MockDatabasePort) DeleteDomain(ctx context.Context, id string) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
